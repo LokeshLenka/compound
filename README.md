@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal Hub — Frontend
 
-## Getting Started
+Next.js 16 (App Router) + TypeScript + Tailwind v4 + shadcn/ui (base-ui) + TanStack Query + TipTap. Data lives in Supabase (see `../backend`).
 
-First, run the development server:
+## Local development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Start the Supabase stack (from `../backend`): `npx supabase start`
+2. Copy `.env.example` → `.env.local` and fill in the local values from `npx supabase status --output env` in `../backend`:
+   - `NEXT_PUBLIC_SUPABASE_URL` (e.g. `http://127.0.0.1:54321`)
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (local linking/tests only — never exposed to the browser)
+3. `pnpm dev` → http://localhost:3000
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Demo seed account (after `supabase db reset` in backend): `demo@personalhub.local` / `demo123456`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Start dev server (Next 16 + Turbopack) |
+| `pnpm build` | Production build |
+| `pnpm lint` | ESLint (`eslint .`) |
+| `pnpm typecheck` | `tsc --noEmit` |
+| `pnpm test` | Vitest unit tests |
+| `pnpm e2e` | Playwright E2E (needs local Supabase + dev server; auto-starts dev server) |
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+- Data access ONLY via Supabase clients in `src/lib/supabase/*` (browser singleton + server client + session-refresh middleware). No ad-hoc fetch calls.
+- Auth gate lives in `src/proxy.ts` (Next 16 replaces `middleware.ts` with `proxy`).
+- TanStack Query per feature (`src/features/<feature>/use-*.ts`); optimistic updates for check-ins and mutations.
+- Server components are only used for the shell/layout; every page is a client component that loads its own data.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploying to Vercel
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Push the frontend repo to GitHub and import it as a Vercel project (framework auto-detected: Next.js). `vercel.json` pins the framework.
+2. Create a Supabase project (cloud), apply migrations: `npx supabase db push` and seed via `node scripts/seed.mjs` (backend repo).
+3. Add env vars in Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+4. Deploy the `delete-account` edge function to the cloud project: `supabase functions deploy delete-account` (needs service-role access). Required for the Settings → Delete account flow.
+5. Enable email confirmation on the cloud project (local dev has it off for convenience).
 
-## Deploy on Vercel
+All tables are RLS-restricted to `auth.uid()`, so the cloud app works with the exact same migrations as local.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## E2E notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Playwright tests register their own throwaway user via the UI (email `e2e-<ts>@test.local`), so parallel runs never collide.
+- `playwright.config.ts` reuses an already-running dev server; set `reuseExistingServer: false` for CI.
+- Run `pnpm exec playwright install chromium` once after a fresh clone.

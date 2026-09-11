@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   title: { default: "Personal Hub", template: "%s · Personal Hub" },
   description:
     "Habits, tasks, notes and diary — your private personal hub.",
+  manifest: "/manifest.webmanifest",
+  icons: [{ rel: "icon", url: "/icon.svg", type: "image/svg+xml" }],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
