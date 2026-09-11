@@ -181,7 +181,6 @@ export function AppShell({
           </Sheet>
           <span className="font-semibold">Personal Hub</span>
           <div className="ml-auto flex items-center gap-1 md:hidden">
-            <GlobalSearch />
             <Link href="/settings" aria-label="Settings">
               <Settings className="size-4" />
             </Link>

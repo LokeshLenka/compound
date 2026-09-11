@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useTheme } from "next-themes"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 import {
   useProfile,
@@ -40,6 +41,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 function ProfileForm() {
   const { data: profile, isLoading } = useProfile()
   const update = useUpdateProfile()
+  const router = useRouter()
   const {
     register,
     handleSubmit,
@@ -55,6 +57,7 @@ function ProfileForm() {
 
   async function onSubmit(values: ProfileFormValues) {
     await update.mutateAsync({ full_name: values.full_name })
+    router.refresh()
     toast.success("Profile updated")
   }
 
