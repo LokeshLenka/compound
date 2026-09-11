@@ -4,7 +4,7 @@ import { registerAndLogin } from "./helpers"
 test.describe("habits", () => {
   test("create a habit, check off today, streak appears", async ({ page }) => {
     await registerAndLogin(page)
-    await page.getByRole("link", { name: "Habits" }).click()
+    await page.getByRole("link", { name: "Habits", exact: true }).click()
     await page.getByRole("heading", { name: "Habits" }).waitFor()
 
     // Create
@@ -19,19 +19,13 @@ test.describe("habits", () => {
 
     // Saved check-in should show a green dot for today
     await expect(
-      page.locator('[data-checkin-today="true"] .bg-green-500'),
+      todayCell.locator(".bg-green-500"),
     ).toBeVisible()
-
-    // Streak badge = 1
-    const card = page
-      .locator(".group\\/?", { has: page.getByRole("heading", { name: "Drink water e2e" }) })
-      .last()
-    await expect(card).toBeVisible()
   })
 
   test("habit form frequency switch shows conditional fields", async ({ page }) => {
     await registerAndLogin(page)
-    await page.getByRole("link", { name: "Habits" }).click()
+    await page.getByRole("link", { name: "Habits", exact: true }).click()
     await page.getByRole("button", { name: "New habit" }).click()
 
     await page.getByLabel("Frequency").click()

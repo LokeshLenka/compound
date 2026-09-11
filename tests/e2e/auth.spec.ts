@@ -4,7 +4,9 @@ import { registerAndLogin } from "./helpers"
 test("redirects unauthenticated visitors to login", async ({ page }) => {
   await page.goto("/dashboard")
   await page.waitForURL("**/login**")
-  await expect(page.getByRole("heading", { name: "Personal Hub" })).toBeVisible()
+  await expect(
+    page.getByText("Habits, tasks, notes & diary in one private place."),
+  ).toBeVisible()
 })
 
 test("register → dashboard → sign out → login again", async ({ page }) => {
@@ -13,7 +15,7 @@ test("register → dashboard → sign out → login again", async ({ page }) => 
 
   // Sidebar shows the four modules
   for (const label of ["Habits", "Tasks", "Notes", "Diary"]) {
-    await expect(page.getByRole("link", { name: label })).toBeVisible()
+    await expect(page.getByRole("link", { name: label, exact: true })).toBeVisible()
   }
 
   // Sign out

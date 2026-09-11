@@ -166,7 +166,7 @@ export function HabitFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Frequency</Label>
+            <Label htmlFor="habit-frequency">Frequency</Label>
             <Select
               value={frequency}
               onValueChange={(v) =>
@@ -177,7 +177,7 @@ export function HabitFormDialog({
                 )
               }
             >
-              <SelectTrigger>
+              <SelectTrigger id="habit-frequency">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
