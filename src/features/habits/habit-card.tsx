@@ -116,6 +116,9 @@ export function HabitCard({
                 disabled={isFuture}
                 onClick={() => toggleLog.mutate({ habit_id: habit.id, log_date: iso })}
                 title={`${humanDate(iso)} — ${due ? "due" : "extra"}`}
+                data-checkin-today={isToday ? "true" : undefined}
+                data-checkin-date={iso}
+                aria-label={`Toggle ${humanDate(iso)} check-in`}
                 className={cn(
                   "flex flex-1 flex-col items-center gap-1 rounded-md py-1 transition",
                   isFuture && "opacity-40",

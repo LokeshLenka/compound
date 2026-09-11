@@ -34,6 +34,7 @@ export default function DiaryPage() {
   const [tagsInput, setTagsInput] = useState("")
   const [dirty, setDirty] = useState(false)
 
+  /* eslint-disable react-hooks/set-state-in-effect */ // syncs editor to the selected day's entry
   useEffect(() => {
     setTitle(entry?.title ?? "")
     setContent(entry?.content ?? "")
@@ -42,6 +43,7 @@ export default function DiaryPage() {
     setTagsInput(entry?.tags?.join(", ") ?? "")
     setDirty(false)
   }, [entry, selectedDate])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function noteDirty() {
     setDirty(true)

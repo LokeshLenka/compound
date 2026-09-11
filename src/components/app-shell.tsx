@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
+import { GlobalSearch } from "@/features/search/global-search"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
@@ -118,9 +119,22 @@ export function AppShell({
         </Link>
         <div className="mt-4 flex-1">
           <NavLinks pathname={pathname} />
+          <div className="mt-3 px-3">
+            <GlobalSearch />
+          </div>
         </div>
         <Separator className="my-2" />
-        <div className="flex items-center gap-2 px-2">
+        <Link
+          href="/settings"
+          className={cn(
+            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground",
+            pathname === "/settings" && "bg-accent text-accent-foreground",
+          )}
+        >
+          <Settings className="size-4" />
+          Settings
+        </Link>
+        <div className="mt-2 flex items-center gap-2 px-2">
           <Avatar className="size-8">
             <AvatarFallback className="text-xs">{initials}</AvatarFallback>
           </Avatar>
@@ -167,6 +181,7 @@ export function AppShell({
           </Sheet>
           <span className="font-semibold">Personal Hub</span>
           <div className="ml-auto flex items-center gap-1 md:hidden">
+            <GlobalSearch />
             <Link href="/settings" aria-label="Settings">
               <Settings className="size-4" />
             </Link>

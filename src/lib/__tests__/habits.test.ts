@@ -10,7 +10,6 @@ import {
 import { toISODate } from "@/lib/dates"
 import type { Habit } from "@/lib/types"
 
-const todayIso = () => toISODate(new Date())
 const daysAgo = (n: number) => toISODate(subDays(new Date(), n))
 
 function habit(partial: Partial<Habit>): Habit {

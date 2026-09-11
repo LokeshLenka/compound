@@ -39,6 +39,7 @@ export function NoteFormDialog({
   const [content, setContent] = useState("")
   const [tagsInput, setTagsInput] = useState("")
 
+  /* eslint-disable react-hooks/set-state-in-effect */ // syncs form + editor to the opened note
   useEffect(() => {
     if (open) {
       reset({
@@ -50,6 +51,7 @@ export function NoteFormDialog({
       setTagsInput(note?.tags?.join(", ") ?? "")
     }
   }, [open, note, reset])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   async function onSubmit(values: NoteFormValues) {
     await saveNote.mutateAsync({
