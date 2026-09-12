@@ -76,6 +76,24 @@ test("type directly into the open diary book page", async ({ page }) => {
   )
 })
 
+test("open a saved note by clicking its card", async ({ page }) => {
+  await registerAndLogin(page)
+  await page.getByRole("link", { name: "Notes", exact: true }).click()
+  await page.getByRole("heading", { name: "Notes" }).waitFor()
+
+  await page.getByRole("button", { name: "New note" }).click()
+  await page.getByPlaceholder("Title").fill("Open me later")
+  await page.locator(".tiptap").fill("Clicking the card must reopen this note.")
+  await page.getByRole("button", { name: "Save" }).click()
+  // Close the dialog (Save closes it) and click the saved card.
+  await page.getByText("Open me later").click()
+  await expect(page.getByRole("dialog")).toBeVisible()
+  await expect(page.getByPlaceholder("Title")).toHaveValue("Open me later")
+  await expect(page.locator(".tiptap")).toContainText(
+    "Clicking the card must reopen this note.",
+  )
+})
+
 test("mobile diary shows a floating bubble toolbar on text selection", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await registerAndLogin(page)

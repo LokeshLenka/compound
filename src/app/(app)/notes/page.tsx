@@ -159,7 +159,13 @@ function NotesPageContent() {
                 n.id === firstMatchId && "ring-2 ring-primary",
               )}
             >
-              <CardContent className="space-y-2 p-4" onClick={() => setEditing(n)}>
+              <CardContent
+                className="space-y-2 p-4"
+                onClick={() => {
+                  setEditing(n)
+                  setFormOpen(true)
+                }}
+              >
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="truncate font-semibold">
                     {n.title || "Untitled"}
