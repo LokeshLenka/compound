@@ -1,19 +1,33 @@
 "use client"
 
-import { useState } from "react"
-import Link from "next/link"
-import { Plus, Flame, CheckCircle2, Repeat, ArrowUpDown, BarChart3 } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Plus, Search, ListFilter } from "lucide-react"
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable"
 import { useHabits, useHabitLogs, useDeleteHabit, useMoveHabit } from "@/features/habits/use-habits"
 import { HabitCard } from "@/features/habits/habit-card"
+import { SortableHabitCard } from "@/features/habits/sortable-habit-card"
 import { HabitFormDialog } from "@/features/habits/habit-form"
-import { currentStreak, isDueToday } from "@/lib/habits"
-import { todayISO } from "@/lib/dates"
+import { currentStreak } from "@/lib/habits"
 import type { Habit } from "@/lib/types"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
 import { CreateFab } from "@/components/create-fab"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,41 +38,88 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { HabitCompletionsChart } from "@/features/habits/habit-chart"
+
+type HabitSort = "custom" | "name" | "streak" | "newest"
+
+const SORTS: { value: HabitSort; label: string }[] = [
+  { value: "custom", label: "Custom · drag to order" },
+  { value: "name", label: "Name A–Z" },
+  { value: "streak", label: "Streak" },
+  { value: "newest", label: "Newest" },
+]
 
 export default function HabitsPage() {
-  const { data: habits, isLoading } = useHabits()
-  const { data: allLogs } = useHabitLogs()
+  const { data: habits = [], isLoading } = useHabits()
+  const { data: allLogs = [] } = useHabitLogs()
   const deleteHabit = useDeleteHabit()
   const moveHabit = useMoveHabit()
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Habit | null>(null)
   const [deleting, setDeleting] = useState<Habit | null>(null)
-  const [reorderMode, setReorderMode] = useState(false)
+  const [query, setQuery] = useState("")
+  const [sort, setSort] = useState<HabitSort>("custom")
 
-  const today = todayISO()
-  const doneToday = allLogs?.filter((l) => l.log_date === today).length ?? 0
-  const bestStreak = habits?.reduce((max, h) => {
-    const dates = (allLogs ?? [])
-      .filter((l) => l.habit_id === h.id)
-      .map((l) => l.log_date)
-    const s = currentStreak(h, dates)
-    return Math.max(max, s)
-  }, 0)
-  const dueToday = habits?.filter(isDueToday).length ?? 0
+  const logsByHabit = useMemo(() => {
+    const map = new Map<string, string[]>()
+    for (const l of allLogs) {
+      const arr = map.get(l.habit_id) ?? []
+      arr.push(l.log_date)
+      map.set(l.habit_id, arr)
+    }
+    return map
+  }, [allLogs])
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const list = q
+      ? habits.filter(
+          (h) =>
+            h.name.toLowerCase().includes(q) ||
+            h.emoji.toLowerCase().includes(q),
+        )
+      : [...habits]
+    if (sort === "name") {
+      list.sort((a, b) => a.name.localeCompare(b.name))
+    } else if (sort === "streak") {
+      list.sort((a, b) => {
+        const sa = currentStreak(a, logsByHabit.get(a.id) ?? [])
+        const sb = currentStreak(b, logsByHabit.get(b.id) ?? [])
+        return sb - sa
+      })
+    } else if (sort === "newest") {
+      list.sort((a, b) => b.created_at.localeCompare(a.created_at))
+    }
+    return list
+  }, [habits, query, sort, logsByHabit])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const ids = visible.map((h) => h.id)
+    const oldIndex = ids.indexOf(active.id as string)
+    const newIndex = ids.indexOf(over.id as string)
+    if (oldIndex === -1 || newIndex === -1) return
+    moveHabit.mutate({ ids: arrayMove(ids, oldIndex, newIndex) })
+  }
 
   function openNew() {
     setEditing(null)
     setFormOpen(true)
   }
 
-  function move(h: Habit, dir: "up" | "down") {
-    moveHabit.mutate({ id: h.id, dir })
+  const edit = (habit: Habit) => {
+    setEditing(habit)
+    setFormOpen(true)
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Habits</h1>
@@ -66,53 +127,35 @@ export default function HabitsPage() {
             Build streaks one day at a time.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/habits/stats"
-            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8")}
-          >
-            <BarChart3 className="size-3.5" /> Analytics
-          </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8"
-            onClick={() => setReorderMode((v) => !v)}
-          >
-            <ArrowUpDown className="size-3.5" /> {reorderMode ? "Done" : "Reorder"}
-          </Button>
-          <Button onClick={openNew}>
-            <Plus className="mr-1 size-4" /> New habit
-          </Button>
-        </div>
+        <Button onClick={openNew}>
+          <Plus className="mr-1 size-4" /> New habit
+        </Button>
       </header>
 
-      {reorderMode && (
-        <p className="rounded-xl border bg-card px-4 py-2 text-sm text-muted-foreground">
-          Reorder mode is on — use the ↑ ↓ arrows on each habit to change its position.
-        </p>
-      )}
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard
-          icon={<Repeat className="size-4" />}
-          label="Active habits"
-          value={habits?.length ?? 0}
-        />
-        <SummaryCard
-          icon={<CheckCircle2 className="size-4" />}
-          label="Check-ins today"
-          value={doneToday}
-        />
-        <SummaryCard
-          icon={<Flame className="size-4" />}
-          label="Best current streak"
-          value={bestStreak ?? 0}
-          hint={dueToday > 0 ? `${dueToday} habits due today` : undefined}
-        />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-56 flex-1">
+          <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search habits…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <Select value={sort} onValueChange={(v) => setSort(v as HabitSort)}>
+          <SelectTrigger id="habit-sort" aria-label="Sort habits" className="h-8 gap-1.5">
+            <ListFilter className="size-3.5 text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SORTS.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-
-      <HabitCompletionsChart logs={allLogs ?? []} />
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2">
@@ -120,30 +163,45 @@ export default function HabitsPage() {
             <Skeleton key={i} className="h-44 w-full" />
           ))}
         </div>
-      ) : habits?.length ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {habits.map((h, i) => (
-            <HabitCard
-              key={h.id}
-              habit={h}
-              logs={allLogs ?? []}
-              onEdit={(habit) => {
-                setEditing(habit)
-                setFormOpen(true)
-              }}
-              onDelete={(habit) => setDeleting(habit)}
-              moveUp={reorderMode ? () => move(h, "up") : undefined}
-              moveDown={reorderMode ? () => move(h, "down") : undefined}
-              canMoveUp={i > 0}
-              canMoveDown={i < habits.length - 1}
-            />
-          ))}
-        </div>
+      ) : visible.length ? (
+        sort === "custom" ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={visible.map((h) => h.id)}>
+              <div className="grid gap-4 md:grid-cols-2">
+                {visible.map((h) => (
+                  <SortableHabitCard
+                    key={h.id}
+                    habit={h}
+                    logs={allLogs}
+                    onEdit={edit}
+                    onDelete={setDeleting}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {visible.map((h) => (
+              <HabitCard
+                key={h.id}
+                habit={h}
+                logs={allLogs}
+                onEdit={edit}
+                onDelete={setDeleting}
+              />
+            ))}
+          </div>
+        )
       ) : (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            <p className="text-3xl mb-2">🌱</p>
-            <p>No habits yet. Create your first one to start a streak.</p>
+            <p className="mb-2 text-3xl">🌱</p>
+            <p>
+              {query
+                ? "No habits match your search."
+                : "No habits yet. Create your first one to start a streak."}
+            </p>
           </CardContent>
         </Card>
       )}
@@ -154,7 +212,7 @@ export default function HabitsPage() {
         habit={editing}
       />
 
-      {!reorderMode && <CreateFab onClick={openNew} label="New habit" />}
+      <CreateFab onClick={openNew} label="New habit" />
 
       <AlertDialog open={Boolean(deleting)} onOpenChange={(o) => !o && setDeleting(null)}>
         <AlertDialogContent>
@@ -178,34 +236,5 @@ export default function HabitsPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-  )
-}
-
-function SummaryCard({
-  icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: number
-  hint?: string
-}) {
-  return (
-    <Card>
-      <CardContent className="flex items-center gap-3 p-4">
-        <span className="grid size-9 place-items-center rounded-lg bg-muted text-muted-foreground">
-          {icon}
-        </span>
-        <div>
-          <p className="text-2xl font-bold leading-none">{value}</p>
-          <p className="text-xs text-muted-foreground">
-            {label}
-            {hint ? ` · ${hint}` : ""}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
   )
 }

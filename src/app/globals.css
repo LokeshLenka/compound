@@ -215,10 +215,10 @@
 /* ---- Motion & animation utilities (transform/opacity only for GPU perf) ---- */
 @layer utilities {
   .animate-enter {
-    animation: enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: page-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .animate-stagger-children > * {
-    animation: enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: page-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: calc(var(--stagger-i, 0) * 60ms);
   }
   .hover-lift {
@@ -235,7 +235,7 @@
   }
 }
 
-@keyframes enter {
+@keyframes page-enter {
   from {
     opacity: 0;
     transform: translateY(10px);

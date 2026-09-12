@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { reorderHabit } from "@/lib/habits"
 import type { Habit, HabitLog } from "@/lib/types"
 import type { HabitFormValues } from "@/lib/schemas"
 
@@ -123,15 +122,19 @@ export function useDeleteHabit() {
   })
 }
 
-/** Move a habit up/down in its list and persist the new sort_order to every row. */
+/** Persist a new drag-and-drop order: reindexes sort_order 0..n-1 for every row. */
 export function useMoveHabit() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, dir }: { id: string; dir: "up" | "down" }) => {
+    mutationFn: async ({ ids }: { ids: string[] }) => {
       const sb = getSupabaseBrowserClient()
       const previous = qc.getQueryData<Habit[]>(habitsKeys.all) ?? []
-      const next = reorderHabit(previous, id, dir)
-      if (next === previous) return
+      const byId = new Map(previous.map((h) => [h.id, h]))
+      const next = ids
+        .map((id) => byId.get(id))
+        .filter((h): h is Habit => Boolean(h))
+        .map((h, i) => ({ ...h, sort_order: i }))
+      if (next.length === 0) return
       await qc.cancelQueries({ queryKey: habitsKeys.all })
       qc.setQueryData(habitsKeys.all, next)
       try {

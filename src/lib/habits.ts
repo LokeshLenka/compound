@@ -108,21 +108,3 @@ export function completionRate(habit: Habit, logDates: string[], days = 30): num
   const done = due.filter((d) => set.has(d)).length
   return done / due.length
 }
-
-/**
- * Move a habit in the list and reindex `sort_order` to 0..n-1.
- * Returns the same array reference when nothing moves.
- */
-export function reorderHabit(
-  list: Habit[],
-  id: string,
-  dir: "up" | "down",
-): Habit[] {
-  const idx = list.findIndex((h) => h.id === id)
-  const target = dir === "up" ? idx - 1 : idx + 1
-  if (idx === -1 || target < 0 || target >= list.length) return list
-  const next = [...list]
-  const [moved] = next.splice(idx, 1)
-  next.splice(target, 0, moved)
-  return next.map((h, i) => ({ ...h, sort_order: i }))
-}

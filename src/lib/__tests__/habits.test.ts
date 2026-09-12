@@ -6,7 +6,6 @@ import {
   bestStreak,
   completionRate,
   weekCount,
-  reorderHabit,
 } from "@/lib/habits"
 import { toISODate } from "@/lib/dates"
 import type { Habit } from "@/lib/types"
@@ -155,34 +154,5 @@ describe("weekCount", () => {
 describe("toISODate helper", () => {
   it("formats local dates as yyyy-MM-dd", () => {
     expect(toISODate(new Date(2026, 8, 7))).toBe("2026-09-07")
-  })
-})
-
-describe("reorderHabit", () => {
-  const list = [
-    habit({ id: "a", name: "a", sort_order: 0 }),
-    habit({ id: "b", name: "b", sort_order: 0 }),
-    habit({ id: "c", name: "c", sort_order: 0 }),
-  ]
-
-  it("moves a habit up and reindexes sort_order", () => {
-    const next = reorderHabit(list, "b", "up")
-    expect(next.map((h) => h.id)).toEqual(["b", "a", "c"])
-    expect(next.map((h) => h.sort_order)).toEqual([0, 1, 2])
-  })
-
-  it("moves a habit down and reindexes sort_order", () => {
-    const next = reorderHabit(list, "b", "down")
-    expect(next.map((h) => h.id)).toEqual(["a", "c", "b"])
-    expect(next.map((h) => h.sort_order)).toEqual([0, 1, 2])
-  })
-
-  it("is a no-op at the list edges", () => {
-    expect(reorderHabit(list, "a", "up")).toBe(list)
-    expect(reorderHabit(list, "c", "down")).toBe(list)
-  })
-
-  it("is a no-op for an unknown id", () => {
-    expect(reorderHabit(list, "zzz", "up")).toBe(list)
   })
 })

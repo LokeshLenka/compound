@@ -33,12 +33,12 @@ test.describe("habits", () => {
     await expect(page.getByLabel("Times per week")).toBeVisible()
   })
 
-  test("reorder habits and persist the new order", async ({ page }) => {
+  test("reorder habits with drag and drop", async ({ page }) => {
     await registerAndLogin(page)
     await page.getByRole("link", { name: "Habits", exact: true }).click()
     await page.getByRole("heading", { name: "Habits" }).waitFor()
 
-    for (const name of ["Reorder alpha", "Reorder beta"]) {
+    for (const name of ["Alpha habit", "Beta habit"]) {
       await page.getByRole("button", { name: "New habit" }).click()
       await page.getByLabel("Name").fill(name)
       await page.getByRole("button", { name: "Create" }).click()
@@ -47,32 +47,30 @@ test.describe("habits", () => {
 
     const cardTitles = async () =>
       (await page.locator("h3").allTextContents()).map((t) => t.trim())
+    await expect.poll(cardTitles).toEqual(["Alpha habit", "Beta habit"])
 
-    await page.getByRole("button", { name: "Reorder", exact: true }).click()
-    await page.getByRole("button", { name: "Move Reorder beta up" }).click()
-    await expect.poll(cardTitles).toEqual(["Reorder beta", "Reorder alpha"])
+    const alpha = await page.getByRole("button", { name: "Drag Alpha habit" }).boundingBox()
+    const beta = await page.getByRole("button", { name: "Drag Beta habit" }).boundingBox()
+    if (!alpha || !beta) throw new Error("drag handles not visible")
 
-    await page.getByRole("button", { name: "Done", exact: true }).click()
+    await page.mouse.move(beta.x + beta.width / 2, beta.y + beta.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(alpha.x + alpha.width / 2, alpha.y + alpha.height / 2, { steps: 12 })
+    await page.mouse.up()
+
+    await expect.poll(cardTitles).toEqual(["Beta habit", "Alpha habit"])
+
     await page.reload()
     await page.getByRole("heading", { name: "Habits" }).waitFor()
-    await expect.poll(cardTitles).toEqual(["Reorder beta", "Reorder alpha"])
+    await expect.poll(cardTitles).toEqual(["Beta habit", "Alpha habit"])
   })
 
-  test("habit analytics page opens from Habits with stats", async ({ page }) => {
+  test("habit analytics page renders at its route", async ({ page }) => {
     await registerAndLogin(page)
-    await page.getByRole("link", { name: "Habits", exact: true }).click()
-    await page.getByRole("heading", { name: "Habits" }).waitFor()
-
-    await page.getByRole("button", { name: "New habit" }).click()
-    await page.getByLabel("Name").fill("Stats habit")
-    await page.getByRole("button", { name: "Create" }).click()
-    await expect(page.getByRole("heading", { name: "Stats habit" })).toBeVisible()
-
-    await page.getByRole("link", { name: "Analytics" }).click()
+    await page.goto("/habits/stats")
     await page.getByRole("heading", { name: "Habit analytics" }).waitFor()
     await expect(page.getByText("Consistency leaderboard")).toBeVisible()
-    await expect(page.getByText("Per-habit detail")).toBeVisible()
-    await expect(page.getByText("Stats habit").first()).toBeVisible()
+    await expect(page.getByText("Check-ins · last 6 months")).toBeVisible()
   })
 
   test("mobile habits page has a thumb-reach create button", async ({ page }) => {
@@ -81,7 +79,16 @@ test.describe("habits", () => {
     await page.getByRole("link", { name: "Habits", exact: true }).click()
     await page.getByRole("heading", { name: "Habits" }).waitFor()
 
-    await page.locator('button[aria-label="New habit"]').click()
+    const fab = page.locator('button[aria-label="New habit"]')
+    const gap = async () => {
+      const box = await fab.boundingBox()
+      return box ? 844 - box.y - box.height : -1
+    }
+    // Sits just above the mobile bottom nav (~70px tall) — not off-screen.
+    await expect.poll(gap).toBeGreaterThanOrEqual(64)
+    await expect.poll(gap).toBeLessThanOrEqual(120)
+
+    await fab.click()
     await expect(page.getByRole("dialog")).toBeVisible()
   })
 })

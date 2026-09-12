@@ -173,7 +173,7 @@ export default function HabitStatsPage() {
         </CardContent>
       </Card>
 
-      <DetailGrid ranked={ranked} habits={habits} logsByHabit={logsByHabit} />
+      <DetailGrid ranked={ranked} habits={habits} />
     </div>
   )
 }
@@ -234,7 +234,6 @@ function MonthlyChart({ data }: { data: { label: string; checkins: number }[] })
 function DetailGrid({
   ranked,
   habits,
-  logsByHabit,
 }: {
   ranked: {
     habit: Habit
@@ -246,7 +245,6 @@ function DetailGrid({
     week: number
   }[]
   habits: Habit[]
-  logsByHabit: Map<string, string[]>
 }) {
   if (habits.length === 0) return null
   const days = lastNDates(28)
