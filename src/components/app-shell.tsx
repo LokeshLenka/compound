@@ -51,7 +51,7 @@ function NavLinks({
             href={href}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium transition-colors hover-lift",
               active
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
@@ -62,6 +62,42 @@ function NavLinks({
           </Link>
         )
       })}
+    </nav>
+  )
+}
+
+function MobileBottomNav({ pathname }: { pathname: string }) {
+  return (
+    <nav
+      aria-label="Primary"
+      className="fixed inset-x-3 bottom-3 z-40 mx-auto flex max-w-md items-center justify-between rounded-full border bg-background/90 px-2 py-1.5 shadow-lg backdrop-blur md:hidden"
+    >
+      {NAV.map(({ href, label, icon: Icon }) => {
+        const active = pathname === href || pathname.startsWith(`${href}/`)
+        return (
+          <Link
+            key={href}
+            href={href}
+            aria-label={label}
+            className={cn(
+              "relative flex size-11 items-center justify-center rounded-full transition-transform hover-lift",
+              active ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+            )}
+          >
+            <Icon className="size-5" />
+          </Link>
+        )
+      })}
+      <Link
+        href="/settings"
+        aria-label="Settings"
+        className={cn(
+          "relative flex size-11 items-center justify-center rounded-full transition-transform hover-lift",
+          pathname === "/settings" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+        )}
+      >
+        <Settings className="size-5" />
+      </Link>
     </nav>
   )
 }
@@ -113,7 +149,7 @@ export function AppShell({
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r bg-card p-3 md:flex">
         <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 font-semibold">
-          <span className="grid size-7 place-items-center rounded-lg bg-primary text-primary-foreground">
+          <span className="grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
             H
           </span>
           Personal Hub
@@ -128,7 +164,7 @@ export function AppShell({
         <Link
           href="/settings"
           className={cn(
-            "flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground",
+            "flex items-center gap-2 rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground",
             pathname === "/settings" && "bg-accent text-accent-foreground",
           )}
         >
@@ -162,9 +198,6 @@ export function AppShell({
             />
             <SheetContent side="left" className="w-64 p-4">
               <p className="px-3 py-2 font-semibold">Personal Hub</p>
-              <div className="mt-2">
-                <NavLinks pathname={pathname} onNavigate={() => setMenuOpen(false)} />
-              </div>
               <Separator className="my-3" />
               <div className="flex items-center gap-2 px-3">
                 <Avatar className="size-8">
@@ -188,8 +221,13 @@ export function AppShell({
             <ThemeToggle />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-6">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-4 pb-24 md:p-6">
+          <div key={pathname} className="animate-enter">
+            {children}
+          </div>
+        </main>
       </div>
+      <MobileBottomNav pathname={pathname} />
       <InstallPrompt />
     </div>
   )

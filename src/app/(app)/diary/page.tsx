@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Save, Trash2 } from "lucide-react"
 import { useDiaryEntries, useSaveDiaryEntry, useDeleteDiaryEntry } from "@/features/diary/use-diary"
 import { DiaryCalendar } from "@/features/diary/diary-calendar"
+import { DiaryBook } from "@/features/diary/diary-book"
 import { MarkdownEditor } from "@/features/notes/markdown-editor"
 import { MOODS, moodEmoji } from "@/features/diary/moods"
 import { todayISO, humanDate } from "@/lib/dates"
@@ -93,6 +94,12 @@ export default function DiaryPage() {
           One entry per day · current streak {journalingStreak} 🔥
         </p>
       </header>
+
+      <DiaryBook
+        entries={entries ?? []}
+        selectedDate={selectedDate}
+        onSelect={setSelectedDate}
+      />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_1fr]">
         <div className={isLoading ? "animate-pulse" : ""}>

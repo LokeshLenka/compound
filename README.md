@@ -41,12 +41,21 @@ Demo seed account (after `supabase db reset` in backend): `demo@personalhub.loca
 
 All tables are RLS-restricted to `auth.uid()`, so the cloud app works with the exact same migrations as local.
 
+## Design system (P14)
+
+- **Typography:** Poppins is the app font (`--font-poppins` via `next/font/google` in `layout.tsx`); Geist Mono stays for `--font-mono`. Tokens live in `src/app/globals.css` (`@theme inline`).
+- **Palette:** beige primary (oklch) + warm brown/stone neutrals; `--radius: 1rem`. Primary is `bg-primary text-primary-foreground` everywhere; buttons/inputs/links/bottom-nav are pill (`rounded-full`).
+- **Motion (reduced-motion aware):** `globals.css` ships `.animate-enter`, `.animate-stagger-children`, `.hover-lift`, `.hover-scale` + a `prefers-reduced-motion: reduce` kill-switch. Main content re-animates on route change via `key={pathname}` in `app-shell.tsx`.
+- **Mobile nav:** desktop = sidebar; mobile = floating `MobileBottomNav` (pill, `md:hidden`) with the same links. The mobile Sheet now only holds profile/theme/signout.
+- **Diary book:** `src/features/diary/diary-book.tsx` renders an open two-page spread with a 3D leaf turn; pure CSS transforms (GPU-friendly), 700 ms per page, keyboard ←/→, edge hotzones, instant flip under reduced motion. Bounds/logic live in the pure `book-model.ts` (injectable `now` for tests). Pages show the day's mood/title/content/weather/tags or a "blank page".
+
 ## E2E notes
 
 - Playwright tests register their own throwaway user via the UI (email `e2e-<ts>@test.local`), so parallel runs never collide.
 - `playwright.config.ts` reuses an already-running dev server; set `reuseExistingServer: false` for CI.
 - Run `pnpm exec playwright install chromium` once after a fresh clone.
 - The delete-account flow needs the `delete-account` edge function running; it's only in the cloud (created after the local stack booted). Restart the local stack (`supabase start` from the backend repo) if you want to test it locally.
+- **Gotcha:** the diary book's mood emoji deliberately has no `title` attribute — the diary entry editor's mood buttons do, and `getByTitle("Good")` would hit strict-mode ambiguity otherwise.
 
 ## AI tooling
 
