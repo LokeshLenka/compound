@@ -46,3 +46,9 @@ All tables are RLS-restricted to `auth.uid()`, so the cloud app works with the e
 - Playwright tests register their own throwaway user via the UI (email `e2e-<ts>@test.local`), so parallel runs never collide.
 - `playwright.config.ts` reuses an already-running dev server; set `reuseExistingServer: false` for CI.
 - Run `pnpm exec playwright install chromium` once after a fresh clone.
+- The delete-account flow needs the `delete-account` edge function running; it's only in the cloud (created after the local stack booted). Restart the local stack (`supabase start` from the backend repo) if you want to test it locally.
+
+## AI tooling
+
+- Supabase MCP (remote) is configured globally in `~/.config/opencode/opencode.jsonc` against the cloud project ref `dlcivqevddnyltudhjnk`. Prefer MCP tools over the local stack for anything cloud-related.
+- Supabase agent skills auto-load from `~/.agents/skills/`: `supabase` and `supabase-postgres-best-practices`. See the root `AGENTS.md`.
