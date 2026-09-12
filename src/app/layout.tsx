@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
