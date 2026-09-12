@@ -102,26 +102,28 @@ export default function DiaryPage() {
         </p>
       </header>
 
-      <DiaryBook
-        entries={entries ?? []}
-        selectedDate={selectedDate}
-        onSelect={setSelectedDate}
-        editable
-        title={title}
-        content={content}
-        onTitleChange={(v) => {
-          setTitle(v)
-          noteDirty()
-        }}
-        onContentChange={(v) => {
-          setContent(v)
-          noteDirty()
-        }}
-        onCommit={handleBookCommit}
-      />
+      <div className="hidden md:block">
+        <DiaryBook
+          entries={entries ?? []}
+          selectedDate={selectedDate}
+          onSelect={setSelectedDate}
+          editable
+          title={title}
+          content={content}
+          onTitleChange={(v) => {
+            setTitle(v)
+            noteDirty()
+          }}
+          onContentChange={(v) => {
+            setContent(v)
+            noteDirty()
+          }}
+          onCommit={handleBookCommit}
+        />
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_1fr]">
-        <div className={isLoading ? "animate-pulse" : ""}>
+        <div className={`order-2 lg:order-1 ${isLoading ? "animate-pulse" : ""}`}>
           <DiaryCalendar
             entries={entries ?? []}
             selectedDate={selectedDate}
@@ -129,7 +131,7 @@ export default function DiaryPage() {
           />
         </div>
 
-        <Card className="h-fit">
+        <Card className="order-1 h-fit lg:order-2">
           <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-base">
               {humanDate(selectedDate, "EEEE, MMMM d, yyyy")}

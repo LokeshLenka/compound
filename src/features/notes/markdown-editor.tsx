@@ -1,6 +1,7 @@
 "use client"
 
 import { useEditor, EditorContent } from "@tiptap/react"
+import { BubbleMenu } from "@tiptap/react/menus"
 import StarterKit from "@tiptap/starter-kit"
 import Underline from "@tiptap/extension-underline"
 import Highlight from "@tiptap/extension-highlight"
@@ -105,7 +106,7 @@ export function MarkdownEditor({
 
   return (
     <div className="rounded-md border">
-      <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/40 px-1 py-0.5">
+      <div className="hidden md:flex flex-wrap items-center gap-0.5 border-b bg-muted/40 px-1 py-0.5">
         <ToolbarItem label="Bold" active={is((e) => e.isActive("bold"))} onClick={run(() => editor.chain().focus().toggleBold().run())}>
           <Bold className="size-3.5" />
         </ToolbarItem>
@@ -159,7 +160,68 @@ export function MarkdownEditor({
         </ToolbarItem>
       </div>
       <EditorContent editor={editor} />
+
+      <BubbleMenu
+        editor={editor}
+        shouldShow={({ editor: e }) => e.isEditable && e.isFocused && !e.state.selection.empty}
+        options={{ strategy: "fixed" }}
+        className="flex items-center gap-0.5 rounded-full border border-border bg-background/95 p-1 shadow-lg shadow-black/10 backdrop-blur"
+      >
+        <BubbleItem label="Bold" active={is((e) => e.isActive("bold"))} onClick={run(() => editor.chain().focus().toggleBold().run())}>
+          <Bold />
+        </BubbleItem>
+        <BubbleItem label="Italic" active={is((e) => e.isActive("italic"))} onClick={run(() => editor.chain().focus().toggleItalic().run())}>
+          <Italic />
+        </BubbleItem>
+        <BubbleItem label="Underline" active={is((e) => e.isActive("underline"))} onClick={run(() => editor.chain().focus().toggleUnderline().run())}>
+          <UnderlineIcon />
+        </BubbleItem>
+        <BubbleItem label="Strikethrough" active={is((e) => e.isActive("strike"))} onClick={run(() => editor.chain().focus().toggleStrike().run())}>
+          <Strikethrough />
+        </BubbleItem>
+        <BubbleItem label="Inline code" active={is((e) => e.isActive("code"))} onClick={run(() => editor.chain().focus().toggleCode().run())}>
+          <Code />
+        </BubbleItem>
+        <BubbleItem label="Highlight" active={is((e) => e.isActive("highlight"))} onClick={run(() => editor.chain().focus().toggleHighlight().run())}>
+          <Highlighter />
+        </BubbleItem>
+        <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
+        <BubbleItem label="Bullet list" active={is((e) => e.isActive("bulletList"))} onClick={run(() => editor.chain().focus().toggleBulletList().run())}>
+          <List />
+        </BubbleItem>
+        <BubbleItem label="Quote" active={is((e) => e.isActive("blockquote"))} onClick={run(() => editor.chain().focus().toggleBlockquote().run())}>
+          <Quote />
+        </BubbleItem>
+        <BubbleItem label="H1" active={is((e) => e.isActive("heading", { level: 1 }))} onClick={run(() => editor.chain().focus().toggleHeading({ level: 1 }).run())}>
+          <Heading1 />
+        </BubbleItem>
+      </BubbleMenu>
     </div>
+  )
+}
+
+function BubbleItem({
+  active,
+  label,
+  onClick,
+  children,
+}: {
+  active?: boolean
+  label: string
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <Button
+      type="button"
+      size="icon"
+      variant="ghost"
+      aria-label={label}
+      onClick={onClick}
+      className={cn("h-8 w-8 rounded-full text-muted-foreground", active && "bg-accent text-foreground")}
+    >
+      {children}
+    </Button>
   )
 }
 

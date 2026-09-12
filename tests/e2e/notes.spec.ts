@@ -75,3 +75,20 @@ test("type directly into the open diary book page", async ({ page }) => {
     "This entry was typed straight onto the page.",
   )
 })
+
+test("mobile diary shows a floating bubble toolbar on text selection", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await registerAndLogin(page)
+  await page.getByRole("link", { name: "Diary", exact: true }).click()
+  await page.getByRole("heading", { name: "Diary" }).waitFor()
+
+  // The static toolbar is hidden on mobile; the floating bubble tool replaces it.
+  await page.locator(".tiptap").fill("Select a word to format.")
+  await page.locator(".tiptap").click()
+  await page.keyboard.press("Control+a")
+
+  const bold = page.getByRole("button", { name: "Bold" })
+  await expect(bold).toBeVisible()
+  await bold.click()
+  await expect(page.locator(".tiptap strong")).toHaveCount(1)
+})
