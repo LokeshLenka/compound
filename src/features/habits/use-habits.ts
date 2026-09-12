@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { reorderHabit } from "@/lib/habits"
 import type { Habit, HabitLog } from "@/lib/types"
 import type { HabitFormValues } from "@/lib/schemas"
 
@@ -66,7 +67,10 @@ export function useCreateHabit() {
   return useMutation({
     mutationFn: async (values: HabitFormValues) => {
       const sb = getSupabaseBrowserClient()
-      const { error } = await sb.from("habits").insert(toHabitDb(values))
+      const existing = qc.getQueryData<Habit[]>(habitsKeys.all) ?? []
+      const { error } = await sb
+        .from("habits")
+        .insert({ ...toHabitDb(values), sort_order: existing.length })
       if (error) throw error
     },
     onSuccess: () => {
@@ -116,6 +120,33 @@ export function useDeleteHabit() {
       toast.success("Habit archived")
     },
     onError: (e: Error) => toast.error(e.message),
+  })
+}
+
+/** Move a habit up/down in its list and persist the new sort_order to every row. */
+export function useMoveHabit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, dir }: { id: string; dir: "up" | "down" }) => {
+      const sb = getSupabaseBrowserClient()
+      const previous = qc.getQueryData<Habit[]>(habitsKeys.all) ?? []
+      const next = reorderHabit(previous, id, dir)
+      if (next === previous) return
+      await qc.cancelQueries({ queryKey: habitsKeys.all })
+      qc.setQueryData(habitsKeys.all, next)
+      try {
+        await Promise.all(
+          next.map((h) =>
+            sb.from("habits").update({ sort_order: h.sort_order }).eq("id", h.id),
+          ),
+        )
+      } catch (e) {
+        qc.setQueryData(habitsKeys.all, previous)
+        throw e
+      }
+    },
+    onError: () => toast.error("Couldn't reorder habits"),
+    onSettled: () => qc.invalidateQueries({ queryKey: habitsKeys.all }),
   })
 }
 

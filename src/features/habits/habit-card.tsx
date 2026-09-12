@@ -1,6 +1,6 @@
 "use client"
 
-import { Flame, Pencil, Trash2, CheckCircle2, Circle } from "lucide-react"
+import { Flame, Pencil, Trash2, CheckCircle2, Circle, ArrowUp, ArrowDown } from "lucide-react"
 import { lastNDates, toISODate, humanDate } from "@/lib/dates"
 import {
   currentStreak,
@@ -28,11 +28,19 @@ export function HabitCard({
   logs,
   onEdit,
   onDelete,
+  moveUp,
+  moveDown,
+  canMoveUp = false,
+  canMoveDown = false,
 }: {
   habit: Habit
   logs: HabitLog[]
   onEdit: (habit: Habit) => void
   onDelete: (habit: Habit) => void
+  moveUp?: () => void
+  moveDown?: () => void
+  canMoveUp?: boolean
+  canMoveDown?: boolean
 }) {
   const toggleLog = useToggleLog()
 
@@ -100,6 +108,28 @@ export function HabitCard({
             >
               <Trash2 className="size-4 text-muted-foreground" />
             </Button>
+            {moveUp && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Move ${habit.name} up`}
+                disabled={!canMoveUp}
+                onClick={moveUp}
+              >
+                <ArrowUp className="size-4" />
+              </Button>
+            )}
+            {moveDown && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Move ${habit.name} down`}
+                disabled={!canMoveDown}
+                onClick={moveDown}
+              >
+                <ArrowDown className="size-4" />
+              </Button>
+            )}
           </div>
         </div>
 

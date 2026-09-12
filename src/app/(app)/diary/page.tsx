@@ -11,6 +11,7 @@ import { todayISO, humanDate } from "@/lib/dates"
 import { splitTags } from "@/lib/schemas"
 import type { DiaryEntry } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { CreateFab } from "@/components/create-fab"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -131,7 +132,7 @@ export default function DiaryPage() {
           />
         </div>
 
-        <Card className="order-1 h-fit lg:order-2">
+        <Card id="diary-writer" className="order-1 h-fit lg:order-2">
           <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
             <CardTitle className="text-base">
               {humanDate(selectedDate, "EEEE, MMMM d, yyyy")}
@@ -168,6 +169,7 @@ export default function DiaryPage() {
             </div>
 
             <Input
+              id="diary-title"
               placeholder="A short title for today…"
               value={title}
               onChange={(e) => {
@@ -228,6 +230,14 @@ export default function DiaryPage() {
           </CardContent>
         </Card>
       </div>
+
+      <CreateFab
+        label="Write today's entry"
+        onClick={() => {
+          document.getElementById("diary-writer")?.scrollIntoView({ behavior: "smooth", block: "start" })
+          document.getElementById("diary-title")?.focus()
+        }}
+      />
     </div>
   )
 }

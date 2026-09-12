@@ -11,6 +11,7 @@ import {
 import { TaskRow } from "@/features/tasks/task-item"
 import { TaskFormDialog } from "@/features/tasks/task-form"
 import { STATUS_ORDER, STATUS_META } from "@/features/tasks/meta"
+import { CreateFab } from "@/components/create-fab"
 import type { Project, Task, TaskStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -310,6 +311,14 @@ function TasksPageContent() {
         onOpenChange={setFormOpen}
         task={editing}
         defaultStatus={filter === "all" || filter === "done" ? "todo" : filter}
+      />
+
+      <CreateFab
+        label="New task"
+        onClick={() => {
+          setEditing(null)
+          setFormOpen(true)
+        }}
       />
     </div>
   )

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Plus, Pin, Search } from "lucide-react"
 import { useNotes, useTogglePin } from "@/features/notes/use-notes"
 import { NoteFormDialog } from "@/features/notes/note-form"
+import { CreateFab } from "@/components/create-fab"
 import type { Note } from "@/lib/types"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
@@ -214,6 +215,14 @@ function NotesPageContent() {
         open={formOpen}
         onOpenChange={setFormOpen}
         note={editing}
+      />
+
+      <CreateFab
+        label="New note"
+        onClick={() => {
+          setEditing(null)
+          setFormOpen(true)
+        }}
       />
     </div>
   )
