@@ -25,7 +25,25 @@ function PaperLines({ count = 6, className }: { count?: number; className?: stri
   )
 }
 
-function BookPage({ iso, entry }: { iso: string; entry: DiaryEntry | null }) {
+function BookPage({
+  iso,
+  entry,
+  editable,
+  title,
+  content,
+  onTitleChange,
+  onContentChange,
+  onCommit,
+}: {
+  iso: string
+  entry: DiaryEntry | null
+  editable?: boolean
+  title?: string
+  content?: string
+  onTitleChange?: (v: string) => void
+  onContentChange?: (v: string) => void
+  onCommit?: () => void
+}) {
   return (
     <article
       data-slot="book-page"
@@ -48,25 +66,31 @@ function BookPage({ iso, entry }: { iso: string; entry: DiaryEntry | null }) {
         <div className="text-[clamp(0.55rem,1.4vw,0.8rem)] font-semibold uppercase tracking-[0.18em] text-stone-500">
           {humanDate(iso, "EEEE, MMM d")}
         </div>
-        <span
-          className="text-[clamp(0.8rem,2vw,1.2rem)]"
-          aria-hidden
-        >
+        <span className="text-[clamp(0.8rem,2vw,1.2rem)]" aria-hidden>
           {moodEmoji(entry?.mood) || "·"}
         </span>
       </header>
       <div className="relative mt-3 flex-1 overflow-hidden">
-        {entry ? (
+        {editable ? (
           <>
-            {entry.title && (
-              <h3 className="font-heading text-[clamp(0.95rem,2.4vw,1.5rem)] font-semibold leading-snug text-stone-800">
-                {entry.title}
-              </h3>
-            )}
-            <p className="mt-2 text-[clamp(0.62rem,1.55vw,0.95rem)] leading-relaxed text-stone-700">
-              {sentence(entry.content)}
-            </p>
-            {(entry.weather || entry.tags?.length) && (
+            <input
+              aria-label="Diary entry title"
+              placeholder="Title…"
+              value={title ?? ""}
+              onChange={(e) => onTitleChange?.(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              className="w-full bg-transparent font-heading text-[clamp(0.95rem,2.4vw,1.5rem)] font-semibold leading-snug text-stone-800 placeholder:text-stone-300 focus:outline-none"
+            />
+            <textarea
+              aria-label="Diary entry text"
+              placeholder="Write your day…"
+              value={content ?? ""}
+              onChange={(e) => onContentChange?.(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              onBlur={() => onCommit?.()}
+              className="mt-2 h-[calc(100%-2.5rem)] w-full resize-none bg-transparent text-[clamp(0.62rem,1.55vw,0.95rem)] leading-relaxed text-stone-700 placeholder:text-stone-300 focus:outline-none"
+            />
+            {(entry?.weather || entry?.tags?.length) && (
               <footer className="absolute inset-x-0 bottom-0 flex flex-wrap gap-1.5 pt-2 text-[clamp(0.5rem,1.2vw,0.72rem)] text-stone-500">
                 {entry.weather && <span>☀ {entry.weather}</span>}
                 {entry.tags?.map((t) => (
@@ -79,10 +103,33 @@ function BookPage({ iso, entry }: { iso: string; entry: DiaryEntry | null }) {
           </>
         ) : (
           <>
-            <p className="font-heading text-[clamp(1rem,2.5vw,1.6rem)] font-medium italic text-stone-400">
-              A blank page…
-            </p>
-            <PaperLines count={8} className="mt-4 opacity-70" />
+            {entry?.title && (
+              <h3 className="font-heading text-[clamp(0.95rem,2.4vw,1.5rem)] font-semibold leading-snug text-stone-800">
+                {entry.title}
+              </h3>
+            )}
+            {entry?.content ? (
+              <p className="mt-2 text-[clamp(0.62rem,1.55vw,0.95rem)] leading-relaxed text-stone-700">
+                {sentence(entry.content)}
+              </p>
+            ) : (
+              <>
+                <p className="font-heading text-[clamp(0.9rem,2.2vw,1.4rem)] font-medium italic text-stone-400">
+                  A blank page…
+                </p>
+                <PaperLines count={8} className="mt-4 opacity-70" />
+              </>
+            )}
+            {(entry?.weather || entry?.tags?.length) && (
+              <footer className="absolute inset-x-0 bottom-0 flex flex-wrap gap-1.5 pt-2 text-[clamp(0.5rem,1.2vw,0.72rem)] text-stone-500">
+                {entry.weather && <span>☀ {entry.weather}</span>}
+                {entry.tags?.map((t) => (
+                  <span key={t} className="rounded-full border border-stone-400/50 px-2 py-0.5">
+                    #{t}
+                  </span>
+                ))}
+              </footer>
+            )}
           </>
         )}
       </div>
@@ -111,10 +158,22 @@ export function DiaryBook({
   entries,
   selectedDate,
   onSelect,
+  editable = false,
+  title,
+  content,
+  onTitleChange,
+  onContentChange,
+  onCommit,
 }: {
   entries: DiaryEntry[]
   selectedDate: string
   onSelect: (iso: string) => void
+  editable?: boolean
+  title?: string
+  content?: string
+  onTitleChange?: (v: string) => void
+  onContentChange?: (v: string) => void
+  onCommit?: () => void
 }) {
   const [turning, setTurning] = useState<TurnDir | null>(null)
   const timersRef = useRef<number[]>([])
@@ -135,6 +194,7 @@ export function DiaryBook({
   const displayLeft = turning === 1 ? spread.leftIso : turning === -1 ? shiftISO(spread.leftIso, -1) : spread.leftIso
   const displayRight = turning === 1 ? shiftISO(spread.leftIso, 2) : spread.rightIso
   const leafIso = turning === 1 ? spread.rightIso : turning === -1 ? spread.leftIso : spread.rightIso
+  const editing = editable && turning === null
 
   const turnTo = useCallback(
     (dir: TurnDir) => {
@@ -192,8 +252,17 @@ export function DiaryBook({
         <div className="relative [perspective:2200px]" style={{ transform: "rotateX(4deg)" }}>
           <div aria-hidden className="absolute inset-x-[4%] -bottom-4 h-8 rounded-full bg-black/25 blur-2xl" />
           <div className="relative mx-[3%] grid aspect-[2/1.35] grid-cols-2 overflow-hidden rounded-[0.9rem] border border-stone-300/70 shadow-[0_24px_48px_-16px_rgba(60,40,10,0.4)]">
-            {/* Left (dest) + Right (dest) */}
-            <BookPage iso={displayLeft} entry={entryFor(entries, displayLeft)} />
+            {/* Left (dest) + Right (dest) — the left page is the inline editor */}
+            <BookPage
+              iso={displayLeft}
+              entry={entryFor(entries, displayLeft)}
+              editable={editing}
+              title={title}
+              content={content}
+              onTitleChange={onTitleChange}
+              onContentChange={onContentChange}
+              onCommit={onCommit}
+            />
             <BookPage iso={displayRight} entry={entryFor(entries, displayRight)} />
 
             {/* Spine crease */}
@@ -226,8 +295,8 @@ export function DiaryBook({
                 </div>
               </div>
 
-            {/* Hotspots */}
-            {spread.hasNext && (
+            {/* Hotspots — disabled while editing so clicks land in the editor */}
+            {!editing && spread.hasNext && (
               <button
                 type="button"
                 aria-label="Turn to next page"
@@ -237,7 +306,7 @@ export function DiaryBook({
                 <ChevronRight className="size-5 text-stone-400 opacity-0 transition-opacity group-hover/btn:opacity-100" />
               </button>
             )}
-            {spread.hasPrev && (
+            {!editing && spread.hasPrev && (
               <button
                 type="button"
                 aria-label="Turn to previous page"

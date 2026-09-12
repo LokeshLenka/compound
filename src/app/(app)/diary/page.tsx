@@ -64,6 +64,13 @@ export default function DiaryPage() {
     setDirty(false)
   }
 
+  // Book pages autosave on blur, but only when the draft actually changed.
+  async function handleBookCommit() {
+    const seed = byDate.get(selectedDate)
+    if (!dirty && title === (seed?.title ?? "") && content === (seed?.content ?? "")) return
+    await handleSave()
+  }
+
   const journalingStreak = useMemo(() => {
     const keys = [...(entries ?? []).map((e) => e.entry_date)].sort().reverse()
     let streak = 0
@@ -99,6 +106,18 @@ export default function DiaryPage() {
         entries={entries ?? []}
         selectedDate={selectedDate}
         onSelect={setSelectedDate}
+        editable
+        title={title}
+        content={content}
+        onTitleChange={(v) => {
+          setTitle(v)
+          noteDirty()
+        }}
+        onContentChange={(v) => {
+          setContent(v)
+          noteDirty()
+        }}
+        onCommit={handleBookCommit}
       />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_1fr]">

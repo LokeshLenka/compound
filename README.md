@@ -47,7 +47,7 @@ All tables are RLS-restricted to `auth.uid()`, so the cloud app works with the e
 - **Palette:** beige primary (oklch) + warm brown/stone neutrals; `--radius: 1rem`. Primary is `bg-primary text-primary-foreground` everywhere; buttons/inputs/links/bottom-nav are pill (`rounded-full`).
 - **Motion (reduced-motion aware):** `globals.css` ships `.animate-enter`, `.animate-stagger-children`, `.hover-lift`, `.hover-scale` + a `prefers-reduced-motion: reduce` kill-switch. Main content re-animates on route change via `key={pathname}` in `app-shell.tsx`.
 - **Mobile nav:** desktop = sidebar; mobile = floating `MobileBottomNav` (pill, `md:hidden`) with the same links. The mobile Sheet now only holds profile/theme/signout.
-- **Diary book:** `src/features/diary/diary-book.tsx` renders an open two-page spread with a 3D leaf turn; pure CSS transforms (GPU-friendly), 700 ms per page, keyboard ←/→, edge hotzones, instant flip under reduced motion. Bounds/logic live in the pure `book-model.ts` (injectable `now` for tests). Pages show the day's mood/title/content/weather/tags or a "blank page".
+- **Diary book:** `src/features/diary/diary-book.tsx` renders an open two-page spread with a 3D leaf turn; pure CSS transforms (GPU-friendly), 700 ms per page, keyboard ←/→, edge hotzones, instant flip under reduced motion. Bounds/logic live in the pure `book-model.ts` (injectable `now` for tests). The left (selected) page is a **direct inline editor** — click the paper and type title + body; blur autosaves only when changed. Pages show the day's mood/title/content/weather/tags or a "blank page".
 
 ## E2E notes
 

@@ -58,3 +58,20 @@ test("create a diary entry with a mood", async ({ page }) => {
   )
   await expect(page.getByTitle("Good")).toBeVisible()
 })
+
+test("type directly into the open diary book page", async ({ page }) => {
+  await registerAndLogin(page)
+  await page.getByRole("link", { name: "Diary", exact: true }).click()
+  await page.getByRole("heading", { name: "Diary" }).waitFor()
+
+  // The left (today) page is the inline editor — type into it directly.
+  await page.getByLabel("Diary entry title").fill("Written in the book")
+  await page.getByLabel("Diary entry text").fill("This entry was typed straight onto the page.")
+
+  // Clicking away commits the draft.
+  await page.getByRole("heading", { name: "Diary" }).click()
+  await expect(page.getByLabel("Diary entry title")).toHaveValue("Written in the book")
+  await expect(page.getByLabel("Diary entry text")).toHaveValue(
+    "This entry was typed straight onto the page.",
+  )
+})
