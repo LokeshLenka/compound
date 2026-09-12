@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Save, Trash2 } from "lucide-react"
+import { PenLine, Save, Trash2 } from "lucide-react"
 import { useDiaryEntries, useSaveDiaryEntry, useDeleteDiaryEntry } from "@/features/diary/use-diary"
 import { DiaryCalendar } from "@/features/diary/diary-calendar"
 import { DiaryBook } from "@/features/diary/diary-book"
@@ -51,6 +51,11 @@ export default function DiaryPage() {
     setDirty(true)
   }
 
+  function focusEditor() {
+    document.getElementById("diary-writer")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    document.getElementById("diary-title")?.focus()
+  }
+
   async function handleSave() {
     await saveEntry.mutateAsync({
       entry_date: selectedDate,
@@ -96,11 +101,16 @@ export default function DiaryPage() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-2xl font-bold">Diary</h1>
-        <p className="text-sm text-muted-foreground">
-          One entry per day · current streak {journalingStreak} 🔥
-        </p>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Diary</h1>
+          <p className="text-sm text-muted-foreground">
+            One entry per day · current streak {journalingStreak} 🔥
+          </p>
+        </div>
+        <Button onClick={focusEditor}>
+          <PenLine className="mr-1 size-4" /> Write entry
+        </Button>
       </header>
 
       <div className="hidden md:block">
@@ -233,10 +243,7 @@ export default function DiaryPage() {
 
       <CreateFab
         label="Write today's entry"
-        onClick={() => {
-          document.getElementById("diary-writer")?.scrollIntoView({ behavior: "smooth", block: "start" })
-          document.getElementById("diary-title")?.focus()
-        }}
+        onClick={focusEditor}
       />
     </div>
   )

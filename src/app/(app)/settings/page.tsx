@@ -16,6 +16,7 @@ import {
 import { profileSchema, type ProfileFormValues } from "@/lib/schemas"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { QuickAdd } from "@/components/quick-add"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -212,9 +213,12 @@ function DangerZone() {
 export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your profile and preferences.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">Manage your profile and preferences.</p>
+        </div>
+        <QuickAdd />
       </div>
 
       <Card>

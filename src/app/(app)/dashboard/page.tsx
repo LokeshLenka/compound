@@ -18,6 +18,7 @@ import { todayISO, humanDate } from "@/lib/dates"
 import { STATUS_META } from "@/features/tasks/meta"
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { QuickAdd } from "@/components/quick-add"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
@@ -57,11 +58,14 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          {humanDate(today, "EEEE, MMMM d")} — here’s your day at a glance.
-        </p>
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            {humanDate(today, "EEEE, MMMM d")} — here’s your day at a glance.
+          </p>
+        </div>
+        <QuickAdd />
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

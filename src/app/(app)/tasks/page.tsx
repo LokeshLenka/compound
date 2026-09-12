@@ -68,6 +68,15 @@ function TasksPageContent() {
     if (q) setQuery(q)
   }, [searchParams])
 
+  useEffect(() => {
+    if (searchParams.get("create")) {
+      /* eslint-disable react-hooks/set-state-in-effect */ // open create dialog from ?create=1
+      setEditing(null)
+      setFormOpen(true)
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [searchParams])
+
   const projectNames = useMemo(() => {
     const m = new Map<string, string>()
     for (const p of projects ?? []) m.set(p.id, p.name)

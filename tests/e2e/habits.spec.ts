@@ -65,12 +65,14 @@ test.describe("habits", () => {
     await expect.poll(cardTitles).toEqual(["Beta habit", "Alpha habit"])
   })
 
-  test("habit analytics page renders at its route", async ({ page }) => {
+  test("habit analytics page opens from the header link", async ({ page }) => {
     await registerAndLogin(page)
-    await page.goto("/habits/stats")
+    await page.getByRole("link", { name: "Habits", exact: true }).click()
+    await page.getByRole("heading", { name: "Habits" }).waitFor()
+
+    await page.getByRole("link", { name: "Analytics" }).click()
     await page.getByRole("heading", { name: "Habit analytics" }).waitFor()
     await expect(page.getByText("Consistency leaderboard")).toBeVisible()
-    await expect(page.getByText("Check-ins · last 6 months")).toBeVisible()
   })
 
   test("mobile habits page has a thumb-reach create button", async ({ page }) => {

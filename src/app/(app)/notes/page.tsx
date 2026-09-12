@@ -50,6 +50,15 @@ function NotesPageContent() {
     if (q) setQuery(q)
   }, [searchParams])
 
+  useEffect(() => {
+    if (searchParams.get("create")) {
+      /* eslint-disable react-hooks/set-state-in-effect */ // open create dialog from ?create=1
+      setEditing(null)
+      setFormOpen(true)
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [searchParams])
+
   const allTags = useMemo(() => {
     const counts = new Map<string, number>()
     for (const n of notes ?? []) for (const t of n.tags) counts.set(t, (counts.get(t) ?? 0) + 1)

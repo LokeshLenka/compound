@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { Plus, Search, ListFilter } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { Plus, Search, ListFilter, BarChart3 } from "lucide-react"
 import {
   DndContext,
   PointerSensor,
@@ -22,7 +23,8 @@ import { SortableHabitCard } from "@/features/habits/sortable-habit-card"
 import { HabitFormDialog } from "@/features/habits/habit-form"
 import { currentStreak } from "@/lib/habits"
 import type { Habit } from "@/lib/types"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -42,7 +44,7 @@ import {
 type HabitSort = "custom" | "name" | "streak" | "newest"
 
 const SORTS: { value: HabitSort; label: string }[] = [
-  { value: "custom", label: "Custom · drag to order" },
+  { value: "custom", label: "Custom" },
   { value: "name", label: "Name A–Z" },
   { value: "streak", label: "Streak" },
   { value: "newest", label: "Newest" },
@@ -59,6 +61,15 @@ export default function HabitsPage() {
   const [deleting, setDeleting] = useState<Habit | null>(null)
   const [query, setQuery] = useState("")
   const [sort, setSort] = useState<HabitSort>("custom")
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("create")) {
+      /* eslint-disable react-hooks/set-state-in-effect */ // open create dialog from /?create=1
+      setEditing(null)
+      setFormOpen(true)
+      /* eslint-enable react-hooks/set-state-in-effect */
+    }
+  }, [])
 
   const logsByHabit = useMemo(() => {
     const map = new Map<string, string[]>()
@@ -127,13 +138,21 @@ export default function HabitsPage() {
             Build streaks one day at a time.
           </p>
         </div>
-        <Button onClick={openNew}>
-          <Plus className="mr-1 size-4" /> New habit
-        </Button>
+        <div className="flex gap-2">
+          <Link
+            href="/habits/stats"
+            className={cn(buttonVariants({ variant: "outline" }), "h-9 px-3 text-sm font-medium")}
+          >
+            <BarChart3 className="mr-1 size-4" /> Analytics
+          </Link>
+          <Button onClick={openNew}>
+            <Plus className="mr-1 size-4" /> New habit
+          </Button>
+        </div>
       </header>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-56 flex-1">
+      <div className="flex items-center gap-2">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search habits…"
@@ -143,9 +162,14 @@ export default function HabitsPage() {
           />
         </div>
         <Select value={sort} onValueChange={(v) => setSort(v as HabitSort)}>
-          <SelectTrigger id="habit-sort" aria-label="Sort habits" className="h-8 gap-1.5">
-            <ListFilter className="size-3.5 text-muted-foreground" />
-            <SelectValue />
+          <SelectTrigger
+            id="habit-sort"
+            aria-label="Sort habits"
+            title="Sort habits — Custom lets you drag cards to reorder"
+            className="h-8 shrink-0 gap-1.5"
+          >
+            <ListFilter className="size-3.5 shrink-0 text-muted-foreground" />
+            <SelectValue className="min-w-0" />
           </SelectTrigger>
           <SelectContent>
             {SORTS.map((s) => (
