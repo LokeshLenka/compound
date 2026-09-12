@@ -167,15 +167,7 @@ export function AppShell({
     <div className="flex min-h-dvh">
       {/* Desktop sidebar: icon rail on md, labeled rail on xl */}
       <aside className="sticky top-0 hidden h-dvh w-20 shrink-0 flex-col items-center border-r border-border/60 bg-sidebar/60 py-4 backdrop-blur md:flex xl:w-60 xl:items-stretch xl:px-4">
-        <Link href="/dashboard" aria-label="Personal Hub home" title="Personal Hub" className="flex items-center gap-2.5 xl:px-1">
-          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-lg font-bold text-primary-foreground shadow-sm">
-            H
-          </span>
-          <span className="hidden font-heading text-[15px] font-semibold tracking-tight xl:inline">
-            Personal Hub
-          </span>
-        </Link>
-        <div className="mt-6 flex flex-1 flex-col items-center xl:items-stretch">
+        <div className="mt-2 flex flex-1 flex-col items-center xl:items-stretch">
           <NavLinks pathname={pathname} />
           <div className="mt-4 flex justify-center xl:justify-stretch xl:[&_button]:w-full">
             <GlobalSearch iconOnly />
@@ -231,10 +223,7 @@ export function AppShell({
       {/* Mobile top bar — no drawer; tabs + actions only */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-border/60 bg-background/85 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 backdrop-blur md:hidden">
-          <span className="grid size-8 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-sm font-bold text-primary-foreground shadow-sm" aria-hidden>
-            H
-          </span>
-          <span className="font-semibold tracking-tight">Personal Hub</span>
+          <span className="font-semibold tracking-tight">Compound</span>
           <div className="ml-auto flex items-center gap-1 md:hidden">
             <ThemeToggle />
             <Link

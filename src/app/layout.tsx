@@ -17,9 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Personal Hub", template: "%s · Personal Hub" },
+  title: { default: "Compound", template: "%s · Compound" },
   description:
-    "Habits, tasks, notes and diary — your private personal hub.",
+    "Habits, tasks, notes and diary — your private compound.",
   manifest: "/manifest.webmanifest",
   icons: [{ rel: "icon", url: "/icon.svg", type: "image/svg+xml" }],
   themeColor: [

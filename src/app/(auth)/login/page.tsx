@@ -125,11 +125,8 @@ function LoginCard() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-6 flex flex-col items-center gap-3 text-center">
-        <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-xl font-bold text-primary-foreground shadow-lg shadow-primary/20">
-          H
-        </span>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Personal Hub</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Compound</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Habits, tasks, notes &amp; diary in one private place.
           </p>
