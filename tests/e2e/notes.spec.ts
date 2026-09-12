@@ -23,6 +23,24 @@ test("create a note with markdown and search for it", async ({ page }) => {
   await page.getByRole("button", { name: "Pin" }).click()
 })
 
+test("deep link with ?q= filters and highlights a note", async ({ page }) => {
+  await registerAndLogin(page)
+  await page.getByRole("link", { name: "Notes", exact: true }).click()
+  await page.getByRole("heading", { name: "Notes" }).waitFor()
+
+  await page.getByRole("button", { name: "New note" }).click()
+  await page.getByPlaceholder("Title").fill("Focus anchor e2e")
+  await page.locator(".tiptap").fill("Deep-link verification note")
+  await page.getByRole("button", { name: "Save" }).click()
+  await expect(page.getByText("Focus anchor e2e")).toBeVisible()
+
+  await page.goto("/notes?q=" + encodeURIComponent("Focus anchor e2e"))
+  await expect(page.getByPlaceholder(/Search notes/i)).toHaveValue(
+    "Focus anchor e2e",
+  )
+  await expect(page.locator(".ring-primary", { hasText: "Focus anchor e2e" })).toBeVisible()
+})
+
 test("create a diary entry with a mood", async ({ page }) => {
   await registerAndLogin(page)
   await page.getByRole("link", { name: "Diary", exact: true }).click()

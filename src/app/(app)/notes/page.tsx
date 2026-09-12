@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Plus, Pin, Search } from "lucide-react"
 import { useNotes, useTogglePin } from "@/features/notes/use-notes"
 import { NoteFormDialog } from "@/features/notes/note-form"
@@ -21,13 +22,32 @@ function excerpt(content: string, len = 160): string {
 }
 
 export default function NotesPage() {
+  return (
+    <Suspense fallback={<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {[0, 1, 2, 3].map((i) => (
+        <Skeleton key={i} className="h-40 w-full" />
+      ))}
+    </div>}>
+      <NotesPageContent />
+    </Suspense>
+  )
+}
+
+function NotesPageContent() {
+  const searchParams = useSearchParams()
   const { data: notes, isLoading } = useNotes()
   const togglePin = useTogglePin()
 
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState(searchParams.get("q") ?? "")
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Note | null>(null)
+
+  useEffect(() => {
+    const q = searchParams.get("q")
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (q) setQuery(q)
+  }, [searchParams])
 
   const allTags = useMemo(() => {
     const counts = new Map<string, number>()
@@ -49,6 +69,22 @@ export default function NotesPage() {
     }
     return list
   }, [notes, query, tagFilter])
+
+  const firstMatchId = useMemo(() => {
+    if (!query.trim()) return null
+    const q = query.toLowerCase()
+    return visible.find((n) => n.title.toLowerCase().includes(q))?.id ?? null
+  }, [visible, query])
+
+  useEffect(() => {
+    if (!firstMatchId) return
+    const id = firstMatchId
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`note-${id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
+  }, [firstMatchId])
 
   return (
     <div className="space-y-5">
@@ -117,7 +153,11 @@ export default function NotesPage() {
           {visible.map((n) => (
             <Card
               key={n.id}
-              className="group h-fit cursor-pointer transition hover:border-primary/50"
+              id={`note-${n.id}`}
+              className={cn(
+                "group h-fit cursor-pointer transition hover:border-primary/50",
+                n.id === firstMatchId && "ring-2 ring-primary",
+              )}
             >
               <CardContent className="space-y-2 p-4" onClick={() => setEditing(n)}>
                 <div className="flex items-start justify-between gap-2">

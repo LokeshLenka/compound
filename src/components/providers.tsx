@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ThemeProvider } from "next-themes"
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { Toaster } from "@/components/ui/sonner"
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -18,6 +18,14 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }),
   )
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") return
+    if (!("serviceWorker" in navigator)) return
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {})
+    })
+  }, [])
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -31,11 +31,15 @@ export function TaskRow({
   projectName,
   onEdit,
   compact,
+  highlighted,
+  rowId,
 }: {
   task: Task
   projectName: (id: string | null) => string | undefined
   onEdit: (task: Task) => void
   compact?: boolean
+  highlighted?: boolean
+  rowId?: string
 }) {
   const setStatus = useSetTaskStatus()
   const deleteTask = useDeleteTask()
@@ -43,9 +47,16 @@ export function TaskRow({
 
   return (
     <div
+      id={rowId}
+      draggable={compact}
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", task.id)
+        e.dataTransfer.effectAllowed = "move"
+      }}
       className={cn(
         "group flex items-start gap-3 rounded-lg border bg-card p-3",
         done && "opacity-60",
+        highlighted && "ring-2 ring-primary",
       )}
     >
       <Checkbox

@@ -1,10 +1,12 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Plus, Search, List, Columns3 } from "lucide-react"
 import {
   useTasks,
   useProjects,
+  useSetTaskStatus,
 } from "@/features/tasks/use-tasks"
 import { TaskRow } from "@/features/tasks/task-item"
 import { TaskFormDialog } from "@/features/tasks/task-form"
@@ -33,16 +35,37 @@ const FILTERS: { value: Filter; label: string }[] = [
 ]
 
 export default function TasksPage() {
+  return (
+    <Suspense fallback={<div className="space-y-2">
+      {[0, 1, 2, 3].map((i) => (
+        <Skeleton key={i} className="h-16 w-full" />
+      ))}
+    </div>}>
+      <TasksPageContent />
+    </Suspense>
+  )
+}
+
+function TasksPageContent() {
+  const searchParams = useSearchParams()
   const { data: tasks, isLoading } = useTasks()
   const { data: projects } = useProjects()
+  const setStatus = useSetTaskStatus()
 
   const [view, setView] = useState<"list" | "board">("list")
   const [filter, setFilter] = useState<Filter>("all")
   const [priority, setPriority] = useState<string>("all")
   const [projectId, setProjectId] = useState<string>("all")
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState(searchParams.get("q") ?? "")
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
+  const [dragOver, setDragOver] = useState<TaskStatus | null>(null)
+
+  useEffect(() => {
+    const q = searchParams.get("q")
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (q) setQuery(q)
+  }, [searchParams])
 
   const projectNames = useMemo(() => {
     const m = new Map<string, string>()
@@ -80,6 +103,22 @@ export default function TasksPage() {
     }
     return g
   }, [visible])
+
+  const firstMatchId = useMemo(() => {
+    if (!query.trim()) return null
+    const q = query.toLowerCase()
+    return visible.find((t) => t.title.toLowerCase().includes(q))?.id ?? null
+  }, [visible, query])
+
+  useEffect(() => {
+    if (!firstMatchId) return
+    const id = firstMatchId
+    requestAnimationFrame(() => {
+      document
+        .getElementById(`task-${id}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" })
+    })
+  }, [firstMatchId])
 
   return (
     <div className="space-y-5">
@@ -190,6 +229,8 @@ export default function TasksPage() {
             <TaskRow
               key={t.id}
               task={t}
+              rowId={`task-${t.id}`}
+              highlighted={t.id === firstMatchId}
               projectName={(id) => (id ? projectNames.get(id) : undefined)}
               onEdit={(task) => {
                 setEditing(task)
@@ -201,7 +242,27 @@ export default function TasksPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           {(["todo", "in_progress", "done"] as TaskStatus[]).map((status) => (
-            <Card key={status} className="bg-accent/40">
+            <Card
+              key={status}
+              onDragOver={(e) => {
+                e.preventDefault()
+                e.dataTransfer.dropEffect = "move"
+                setDragOver(status)
+              }}
+              onDragLeave={() => setDragOver((s) => (s === status ? null : s))}
+              onDrop={(e) => {
+                e.preventDefault()
+                setDragOver(null)
+                const id = e.dataTransfer.getData("text/plain")
+                if (!id) return
+                const current = tasks?.find((t) => t.id === id)?.status
+                if (current && current !== status) setStatus.mutate({ id, status })
+              }}
+              className={cn(
+                "transition",
+                dragOver === status ? "bg-accent ring-2 ring-primary" : "bg-accent/40",
+              )}
+            >
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-sm">
                   <span className={cn("size-2 rounded-full", STATUS_META[status].classes.split(" ")[0])} />
@@ -218,6 +279,8 @@ export default function TasksPage() {
                       key={t.id}
                       task={t}
                       compact
+                      rowId={`task-${t.id}`}
+                      highlighted={t.id === firstMatchId}
                       projectName={(id) => (id ? projectNames.get(id) : undefined)}
                       onEdit={(task) => {
                         setEditing(task)
@@ -234,6 +297,12 @@ export default function TasksPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {view === "board" && (
+        <p className="text-xs text-muted-foreground">
+          Tip: drag cards between columns to change their status.
+        </p>
       )}
 
       <TaskFormDialog

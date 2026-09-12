@@ -19,6 +19,7 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
 import { GlobalSearch } from "@/features/search/global-search"
+import { InstallPrompt } from "@/components/install-prompt"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
@@ -189,6 +190,7 @@ export function AppShell({
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 p-4 md:p-6">{children}</main>
       </div>
+      <InstallPrompt />
     </div>
   )
 }

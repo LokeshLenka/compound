@@ -72,14 +72,14 @@ export function useGlobalSearch(q: string) {
           kind: "task" as const,
           title: t.title,
           subtitle: t.status.replace("_", " "),
-          href: "/tasks",
+          href: `/tasks?q=${encodeURIComponent(t.title)}`,
         })),
         ...(notes.data ?? []).map((n: { id: string; title: string; is_pinned: boolean }) => ({
           id: n.id,
           kind: "note" as const,
           title: n.title,
           subtitle: n.is_pinned ? "Pinned note" : "Note",
-          href: "/notes",
+          href: `/notes?q=${encodeURIComponent(n.title)}`,
         })),
         ...(diary.data ?? []).map((d: { id: string; entry_date: string; content: string | null }) => ({
           id: d.id,
