@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Plus, Search, ListFilter, BarChart3 } from "lucide-react"
+import { Plus, Search, ListFilter, BarChart3, Sprout } from "lucide-react"
 import {
   DndContext,
   PointerSensor,
@@ -24,9 +24,9 @@ import { HabitFormDialog } from "@/features/habits/habit-form"
 import { currentStreak } from "@/lib/habits"
 import type { Habit } from "@/lib/types"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { PageHeader } from "@/components/page-header"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { CreateFab } from "@/components/create-fab"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -131,25 +131,22 @@ export default function HabitsPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Habits</h1>
-          <p className="text-sm text-muted-foreground">
-            Build streaks one day at a time.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/habits/stats"
-            className={cn(buttonVariants({ variant: "outline" }), "h-9 px-3 text-sm font-medium")}
-          >
-            <BarChart3 className="mr-1 size-4" /> Analytics
-          </Link>
-          <Button onClick={openNew}>
-            <Plus className="mr-1 size-4" /> New habit
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        title="Habits"
+        actions={
+          <>
+            <Link
+              href="/habits/stats"
+              className={cn(buttonVariants({ variant: "outline" }), "h-9 gap-1.5 px-3 text-sm font-medium")}
+            >
+              <BarChart3 className="size-4" /> Analytics
+            </Link>
+            <Button onClick={openNew} className="hidden h-9 gap-1.5 md:inline-flex">
+              <Plus className="size-4" /> New habit
+            </Button>
+          </>
+        }
+      />
 
       <div className="flex items-center gap-2">
         <div className="relative min-w-0 flex-1">
@@ -191,7 +188,7 @@ export default function HabitsPage() {
         sort === "custom" ? (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={visible.map((h) => h.id)}>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
                 {visible.map((h) => (
                   <SortableHabitCard
                     key={h.id}
@@ -205,7 +202,7 @@ export default function HabitsPage() {
             </SortableContext>
           </DndContext>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2">
             {visible.map((h) => (
               <HabitCard
                 key={h.id}
@@ -218,16 +215,25 @@ export default function HabitsPage() {
           </div>
         )
       ) : (
-        <Card>
-          <CardContent className="py-12 text-center text-muted-foreground">
-            <p className="mb-2 text-3xl">🌱</p>
-            <p>
+        <div className="rounded-3xl border border-border/50 bg-card card-shadow">
+          <div className="px-4 py-12 text-center text-muted-foreground">
+            <p className="mb-3 flex justify-center">
+              <span className="grid size-14 place-items-center rounded-full bg-chart-1/12 text-chart-1">
+                <Sprout className="size-6" aria-hidden />
+              </span>
+            </p>
+            <p className="text-sm">
               {query
                 ? "No habits match your search."
-                : "No habits yet. Create your first one to start a streak."}
+                : "No habits yet — your first streak starts here."}
             </p>
-          </CardContent>
-        </Card>
+            {!query && (
+              <Button onClick={openNew} className="mt-4 gap-1.5">
+                <Plus className="size-4" /> Create your first habit
+              </Button>
+            )}
+          </div>
+        </div>
       )}
 
       <HabitFormDialog

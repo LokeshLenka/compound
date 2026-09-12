@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Plus, Search, List, Columns3 } from "lucide-react"
+import { Plus, Search, List, Columns3, ListChecks } from "lucide-react"
 import {
   useTasks,
   useProjects,
@@ -15,6 +15,7 @@ import { CreateFab } from "@/components/create-fab"
 import type { Project, Task, TaskStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/page-header"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -132,29 +133,29 @@ function TasksPageContent() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Tasks</h1>
-          <p className="text-sm text-muted-foreground">Stay on top of what matters.</p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditing(null)
-            setFormOpen(true)
-          }}
-        >
-          <Plus className="mr-1 size-4" /> New task
-        </Button>
-      </header>
+      <PageHeader
+        title="Tasks"
+        actions={
+          <Button
+            className="hidden md:inline-flex"
+            onClick={() => {
+              setEditing(null)
+              setFormOpen(true)
+            }}
+          >
+            <Plus className="mr-1 size-4" /> New task
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex gap-1 rounded-lg border p-1">
+        <div className="flex gap-1 rounded-full border p-1">
           {FILTERS.map((f) => (
             <Button
               key={f.value}
               variant={filter === f.value ? "secondary" : "ghost"}
               size="sm"
-              className="h-7"
+              className="h-7 rounded-full"
               onClick={() => setFilter(f.value)}
             >
               {f.label}
@@ -200,11 +201,11 @@ function TasksPageContent() {
           </SelectContent>
         </Select>
 
-        <div className="ml-auto flex gap-1 rounded-lg border p-1">
+        <div className="ml-auto flex gap-1 rounded-full border p-1">
           <Button
             variant={view === "list" ? "secondary" : "ghost"}
             size="sm"
-            className="h-7"
+            className="h-7 rounded-full"
             onClick={() => setView("list")}
           >
             <List className="mr-1 size-3.5" /> List
@@ -212,7 +213,7 @@ function TasksPageContent() {
           <Button
             variant={view === "board" ? "secondary" : "ghost"}
             size="sm"
-            className="h-7"
+            className="h-7 rounded-full"
             onClick={() => setView("board")}
           >
             <Columns3 className="mr-1 size-3.5" /> Board
@@ -229,12 +230,28 @@ function TasksPageContent() {
       ) : visible.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            <p className="mb-2 text-3xl">🗂️</p>
-            <p>No tasks match. Add one or adjust filters.</p>
+            <p className="mb-3 flex justify-center">
+              <span className="grid size-14 place-items-center rounded-full bg-chart-2/12 text-chart-2">
+                <ListChecks className="size-6" aria-hidden />
+              </span>
+            </p>
+            <p className="text-sm">No tasks match{filter === "all" ? " yet" : ""} — add one or adjust filters.</p>
+            <Button
+              className="mt-4 gap-1.5"
+              onClick={() => {
+                setEditing(null)
+                setFormOpen(true)
+              }}
+            >
+              <Plus className="size-4" /> Create a task
+            </Button>
           </CardContent>
         </Card>
       ) : view === "list" ? (
         <div className="space-y-2">
+          <p className="px-2 text-xs font-medium text-muted-foreground">
+            {visible.length} tasks · {filter}
+          </p>
           {visible.map((t) => (
             <TaskRow
               key={t.id}
@@ -250,7 +267,7 @@ function TasksPageContent() {
           ))}
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-3">
           {(["todo", "in_progress", "done"] as TaskStatus[]).map((status) => (
             <Card
               key={status}
@@ -299,8 +316,8 @@ function TasksPageContent() {
                     />
                   ))
                 ) : (
-                  <p className="py-6 text-center text-sm text-muted-foreground">
-                    Nothing here
+                  <p className="rounded-2xl border border-dashed border-border py-6 text-center text-sm text-muted-foreground">
+                    Drop cards here
                   </p>
                 )}
               </CardContent>

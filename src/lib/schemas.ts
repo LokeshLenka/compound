@@ -49,6 +49,16 @@ export const profileSchema = z.object({
 
 export type ProfileFormValues = z.input<typeof profileSchema>
 
+export const waterSettingsSchema = z.object({
+  water_goal_ml: z.coerce.number().int().min(100, "Goal must be at least 100").max(10000, "Goal is capped at 10,000"),
+  water_unit: z.enum(["ml", "oz"]),
+  water_quick_amounts: z
+    .array(z.coerce.number().int().min(50).max(2000))
+    .length(3, "Exactly three quick-add sizes"),
+})
+
+export type WaterSettingsFormValues = z.input<typeof waterSettingsSchema>
+
 /** Split "a, b c" into normalized tag strings. */
 export function splitTags(raw: string): string[] {
   return raw

@@ -18,7 +18,7 @@ const KIND_ICONS = {
   diary: BookOpen,
 }
 
-export function GlobalSearch() {
+export function GlobalSearch({ iconOnly = false }: { iconOnly?: boolean }) {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState("")
   const router = useRouter()
@@ -43,13 +43,18 @@ export function GlobalSearch() {
     <>
       <Button
         variant="outline"
-        className="text-muted-foreground"
+        className={cn("text-muted-foreground", iconOnly && "size-11 rounded-full px-0")}
         aria-label="Search (Ctrl+K)"
+        title="Search (Ctrl+K)"
         onClick={openSearch}
       >
         <Search className="size-4" />
-        <span className="hidden lg:inline">Search&hellip;</span>
-        <kbd className="ml-auto hidden rounded border px-1.5 text-[10px] md:inline">Ctrl&nbsp;K</kbd>
+        {!iconOnly && (
+          <>
+            <span className="hidden lg:inline">Search&hellip;</span>
+            <kbd className="ml-auto hidden rounded border px-1.5 text-[10px] md:inline">Ctrl&nbsp;K</kbd>
+          </>
+        )}
       </Button>
 
       <Dialog
@@ -98,7 +103,7 @@ export function GlobalSearch() {
                         href={r.href}
                         onClick={() => setOpen(false)}
                         className={cn(
-                          "my-0.5 flex items-center gap-3 rounded-lg px-3 py-2 transition-colors",
+                          "my-0.5 flex items-center gap-3 rounded-2xl px-3 py-2 transition-colors",
                           "hover:bg-accent hover:text-accent-foreground",
                         )}
                       >

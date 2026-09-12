@@ -88,8 +88,28 @@ export interface Profile {
   full_name: string
   avatar_url: string | null
   theme: string
+  water_goal_ml: number
+  water_unit: "ml" | "oz"
+  water_quick_amounts: number[]
   created_at: string
   updated_at: string
+}
+
+export type WaterUnit = "ml" | "oz"
+
+/** Daily hydration target expressed in the user's display unit. */
+export interface WaterGoal {
+  amount: number
+  unit: WaterUnit
+}
+
+export interface WaterLog {
+  id: string
+  user_id: string
+  amount_ml: number
+  drank_at: string
+  note: string | null
+  created_at: string
 }
 
 export interface TagCount {

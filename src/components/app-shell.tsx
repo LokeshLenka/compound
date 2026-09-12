@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
@@ -10,11 +9,11 @@ import {
   LayoutDashboard,
   ListChecks,
   LogOut,
-  Menu,
   Moon,
   Repeat,
   Sun,
   Settings,
+  Droplet,
 } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
@@ -22,8 +21,6 @@ import { GlobalSearch } from "@/features/search/global-search"
 import { InstallPrompt } from "@/components/install-prompt"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import type { Profile } from "@/lib/types"
 
 const NAV = [
@@ -32,6 +29,7 @@ const NAV = [
   { href: "/tasks", label: "Tasks", icon: ListChecks },
   { href: "/notes", label: "Notes", icon: FileText },
   { href: "/diary", label: "Diary", icon: BookOpen },
+  { href: "/water", label: "Water", icon: Droplet },
 ]
 
 function NavLinks({
@@ -42,7 +40,10 @@ function NavLinks({
   onNavigate?: () => void
 }) {
   return (
-    <nav className="flex flex-col gap-1">
+    <nav
+      className="flex flex-col items-center gap-1.5 xl:items-stretch xl:gap-1"
+      aria-label="Primary"
+    >
       {NAV.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`)
         return (
@@ -50,15 +51,34 @@ function NavLinks({
             key={href}
             href={href}
             onClick={onNavigate}
+            aria-label={label}
+            title={label}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium transition-colors hover-lift",
+              "group relative flex items-center gap-3 rounded-full text-sm font-medium transition-colors active:scale-95",
+              "size-11 justify-center p-0 xl:h-auto xl:w-auto xl:justify-start xl:px-2 xl:py-1.5",
               active
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                ? "bg-primary text-primary-foreground shadow-sm xl:bg-accent/70 xl:text-accent-foreground xl:shadow-none"
+                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground xl:hover:bg-accent/50",
             )}
           >
-            <Icon className="size-4 shrink-0" />
-            <span>{label}</span>
+            <span
+              className={cn(
+                "grid place-items-center rounded-full transition-colors xl:size-8 xl:shrink-0",
+                active
+                  ? "xl:bg-primary xl:text-primary-foreground xl:shadow-sm"
+                  : "xl:bg-muted/60 xl:text-muted-foreground xl:group-hover:bg-muted",
+              )}
+            >
+              <Icon className="size-5 xl:size-4" aria-hidden />
+            </span>
+            <span className="hidden truncate xl:inline">{label}</span>
+            {active && (
+              <span
+                aria-hidden
+                className="absolute -bottom-0.5 size-1 rounded-full bg-current xl:hidden"
+              />
+            )}
           </Link>
         )
       })}
@@ -70,7 +90,7 @@ function MobileBottomNav({ pathname }: { pathname: string }) {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-3 bottom-3 z-40 mx-auto flex max-w-md items-center justify-between rounded-full border bg-background/90 px-2 py-1.5 shadow-lg backdrop-blur md:hidden"
+      className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md items-center justify-between rounded-full border bg-background/90 px-2 py-1.5 shadow-lg backdrop-blur md:hidden"
     >
       {NAV.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`)
@@ -79,42 +99,42 @@ function MobileBottomNav({ pathname }: { pathname: string }) {
             key={href}
             href={href}
             aria-label={label}
+            aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex size-11 items-center justify-center rounded-full transition-transform hover-lift",
+              "relative flex size-11 items-center justify-center rounded-full transition-colors active:scale-95",
               active ? "bg-primary text-primary-foreground" : "text-muted-foreground",
             )}
           >
-            <Icon className="size-5" />
+            <Icon className="size-5" aria-hidden />
+            {active && (
+              <span
+                aria-hidden
+                className="absolute -bottom-0.5 size-1 rounded-full bg-primary-foreground/80"
+              />
+            )}
           </Link>
         )
       })}
-      <Link
-        href="/settings"
-        aria-label="Settings"
-        className={cn(
-          "relative flex size-11 items-center justify-center rounded-full transition-transform hover-lift",
-          pathname === "/settings" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-        )}
-      >
-        <Settings className="size-5" />
-      </Link>
     </nav>
   )
 }
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
   return (
     <Button
       variant="ghost"
       size="icon"
       aria-label="Toggle theme"
-      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      aria-pressed={isDark}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
     >
-      {resolvedTheme === "dark" ? (
-        <Sun className="size-4" />
+      {isDark ? (
+        <Sun className="size-4" aria-hidden />
       ) : (
-        <Moon className="size-4" />
+        <Moon className="size-4" aria-hidden />
       )}
     </Button>
   )
@@ -129,7 +149,6 @@ export function AppShell({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [menuOpen, setMenuOpen] = useState(false)
 
   async function signOut() {
     await getSupabaseBrowserClient().auth.signOut()
@@ -146,85 +165,90 @@ export function AppShell({
 
   return (
     <div className="flex min-h-dvh">
-      {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r bg-card p-3 md:flex">
-        <Link href="/dashboard" className="flex items-center gap-2 px-3 py-2 font-semibold">
-          <span className="grid size-7 place-items-center rounded-full bg-primary text-primary-foreground">
+      {/* Desktop sidebar: icon rail on md, labeled rail on xl */}
+      <aside className="sticky top-0 hidden h-dvh w-20 shrink-0 flex-col items-center border-r border-border/60 bg-sidebar/60 py-4 backdrop-blur md:flex xl:w-60 xl:items-stretch xl:px-4">
+        <Link href="/dashboard" aria-label="Personal Hub home" title="Personal Hub" className="flex items-center gap-2.5 xl:px-1">
+          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-lg font-bold text-primary-foreground shadow-sm">
             H
           </span>
-          Personal Hub
+          <span className="hidden font-heading text-[15px] font-semibold tracking-tight xl:inline">
+            Personal Hub
+          </span>
         </Link>
-        <div className="mt-4 flex-1">
+        <div className="mt-6 flex flex-1 flex-col items-center xl:items-stretch">
           <NavLinks pathname={pathname} />
-          <div className="mt-3 px-3">
-            <GlobalSearch />
+          <div className="mt-4 flex justify-center xl:justify-stretch xl:[&_button]:w-full">
+            <GlobalSearch iconOnly />
           </div>
         </div>
-        <Separator className="my-2" />
         <Link
           href="/settings"
+          aria-label="Settings"
+          title="Settings"
+          aria-current={pathname === "/settings" ? "page" : undefined}
           className={cn(
-            "flex items-center gap-2 rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground",
-            pathname === "/settings" && "bg-accent text-accent-foreground",
+            "group relative flex items-center gap-3 rounded-full text-sm font-medium transition-colors active:scale-95",
+            "size-11 justify-center p-0 xl:h-auto xl:w-auto xl:justify-start xl:px-2 xl:py-1.5",
+            pathname === "/settings"
+              ? "bg-primary text-primary-foreground shadow-sm xl:bg-accent/70 xl:text-accent-foreground xl:shadow-none"
+              : "text-muted-foreground hover:bg-accent/60 hover:text-foreground xl:hover:bg-accent/50",
           )}
         >
-          <Settings className="size-4" />
-          Settings
+          <span
+            className={cn(
+              "grid place-items-center rounded-full transition-colors xl:size-8 xl:shrink-0",
+              pathname === "/settings"
+                ? "xl:bg-primary xl:text-primary-foreground xl:shadow-sm"
+                : "xl:bg-muted/60 xl:text-muted-foreground xl:group-hover:bg-muted",
+            )}
+          >
+            <Settings className="size-5 xl:size-4" aria-hidden />
+          </span>
+          <span className="hidden truncate xl:inline">Settings</span>
+          {pathname === "/settings" && (
+            <span
+              aria-hidden
+              className="absolute -bottom-0.5 size-1 rounded-full bg-current xl:hidden"
+            />
+          )}
         </Link>
-        <div className="mt-2 flex items-center gap-2 px-2">
-          <Avatar className="size-8">
-            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+        <div className="mt-3 flex flex-col items-center gap-1 rounded-full bg-card/70 px-1.5 py-2 ring-1 ring-border/50 xl:flex-row xl:gap-2 xl:px-2 xl:py-1.5">
+          <Avatar className="size-9 shrink-0" title={profile?.full_name || "User"}>
+            <AvatarFallback className="bg-accent text-xs text-accent-foreground">
+              {initials}
+            </AvatarFallback>
           </Avatar>
-          <div className="min-w-0 flex-1">
+          <div className="hidden min-w-0 flex-1 xl:block">
             <p className="truncate text-sm font-medium">{profile?.full_name || "User"}</p>
           </div>
           <ThemeToggle />
-          <Button variant="ghost" size="icon" aria-label="Sign out" onClick={signOut}>
+          <Button variant="ghost" size="icon" aria-label="Sign out" title="Sign out" onClick={signOut}>
             <LogOut className="size-4" />
           </Button>
         </div>
       </aside>
 
-      {/* Mobile top bar */}
+      {/* Mobile top bar — no drawer; tabs + actions only */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-2 border-b bg-background/80 px-4 py-2 backdrop-blur md:hidden">
-          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <SheetTrigger
-              render={
-                <Button variant="ghost" size="icon" aria-label="Open menu">
-                  <Menu className="size-5" />
-                </Button>
-              }
-            />
-            <SheetContent side="left" className="w-64 p-4">
-              <p className="px-3 py-2 font-semibold">Personal Hub</p>
-              <Separator className="my-3" />
-              <div className="flex items-center gap-2 px-3">
-                <Avatar className="size-8">
-                  <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                </Avatar>
-                <span className="truncate text-sm">{profile?.full_name || "User"}</span>
-                <div className="ml-auto flex items-center">
-                  <ThemeToggle />
-                  <Button variant="ghost" size="icon" aria-label="Sign out" onClick={signOut}>
-                    <LogOut className="size-4" />
-                  </Button>
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-          <span className="font-semibold">Personal Hub</span>
+        <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-border/60 bg-background/85 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 backdrop-blur md:hidden">
+          <span className="grid size-8 place-items-center rounded-xl bg-gradient-to-br from-primary to-primary/70 text-sm font-bold text-primary-foreground shadow-sm" aria-hidden>
+            H
+          </span>
+          <span className="font-semibold tracking-tight">Personal Hub</span>
           <div className="ml-auto flex items-center gap-1 md:hidden">
-            <Link href="/settings" aria-label="Settings">
-              <Settings className="size-4" />
-            </Link>
             <ThemeToggle />
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              title="Settings"
+              className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Settings className="size-4" aria-hidden />
+            </Link>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-4 pb-24 md:p-6">
-          <div key={pathname} className="animate-enter">
-            {children}
-          </div>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pt-5 pb-24 md:p-7">
+          <div>{children}</div>
         </main>
       </div>
       <MobileBottomNav pathname={pathname} />

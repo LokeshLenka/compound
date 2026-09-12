@@ -2,13 +2,14 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Plus, Pin, Search } from "lucide-react"
+import { Plus, Pin, Search, FileText } from "lucide-react"
 import { useNotes, useTogglePin } from "@/features/notes/use-notes"
 import { NoteFormDialog } from "@/features/notes/note-form"
 import { CreateFab } from "@/components/create-fab"
 import type { Note } from "@/lib/types"
 import { format } from "date-fns"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/page-header"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -98,22 +99,20 @@ function NotesPageContent() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Notes</h1>
-          <p className="text-sm text-muted-foreground">
-            Markdown notes, pinned, tagged and searchable.
-          </p>
-        </div>
-        <Button
-          onClick={() => {
-            setEditing(null)
-            setFormOpen(true)
-          }}
-        >
-          <Plus className="mr-1 size-4" /> New note
-        </Button>
-      </header>
+      <PageHeader
+        title="Notes"
+        actions={
+          <Button
+            className="hidden md:inline-flex"
+            onClick={() => {
+              setEditing(null)
+              setFormOpen(true)
+            }}
+          >
+            <Plus className="mr-1 size-4" /> New note
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-56 flex-1">
@@ -154,8 +153,23 @@ function NotesPageContent() {
       ) : visible.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            <p className="mb-2 text-3xl">📝</p>
-            <p>No notes yet. Capture your first thought.</p>
+            <p className="mb-3 flex justify-center">
+              <span className="grid size-14 place-items-center rounded-full bg-chart-3/12 text-chart-3">
+                <FileText className="size-6" aria-hidden />
+              </span>
+            </p>
+            <p className="text-sm">No notes yet{query || tagFilter ? " match these filters" : ""}.</p>
+            {!query && !tagFilter && (
+              <Button
+                className="mt-4 gap-1.5"
+                onClick={() => {
+                  setEditing(null)
+                  setFormOpen(true)
+                }}
+              >
+                <Plus className="size-4" /> Write your first note
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -165,7 +179,7 @@ function NotesPageContent() {
               key={n.id}
               id={`note-${n.id}`}
               className={cn(
-                "group h-fit cursor-pointer transition hover:border-primary/50",
+                "group h-fit cursor-pointer transition hover:border-primary/50 hover:card-shadow",
                 n.id === firstMatchId && "ring-2 ring-primary",
               )}
             >
@@ -180,7 +194,14 @@ function NotesPageContent() {
                   <h3 className="truncate font-semibold">
                     {n.title || "Untitled"}
                   </h3>
-                  <div className="flex shrink-0 items-center gap-1 opacity-0 transition group-hover:opacity-100">
+                  <div
+                    className={cn(
+                      "flex shrink-0 items-center gap-1 transition",
+                      n.is_pinned
+                        ? "opacity-100"
+                        : "opacity-0 group-focus-within:opacity-100 group-hover:opacity-100",
+                    )}
+                  >
                     <Button
                       variant="ghost"
                       size="icon"

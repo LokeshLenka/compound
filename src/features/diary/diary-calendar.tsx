@@ -35,7 +35,7 @@ export function DiaryCalendar({
   }
 
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <div className="rounded-2xl border border-border/60 bg-card p-3 card-shadow">
       <div className="mb-3 flex items-center justify-between">
         <Button variant="ghost" size="icon" className="size-8" aria-label="Previous month" onClick={() => shift(-1)}>
           <ChevronLeft className="size-4" />
@@ -63,8 +63,8 @@ export function DiaryCalendar({
               type="button"
               onClick={() => onSelect(iso)}
               className={cn(
-                "relative flex aspect-square flex-col items-center justify-center rounded-md text-xs transition",
-                iso === selectedDate && "bg-primary text-primary-foreground font-semibold",
+                "relative flex aspect-square flex-col items-center justify-center rounded-full text-xs transition",
+                iso === selectedDate && "bg-primary text-primary-foreground font-semibold shadow-sm",
                 iso === today && "ring-1 ring-primary",
                 iso !== selectedDate && "hover:bg-accent",
                 iso > today && "opacity-40",

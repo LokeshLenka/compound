@@ -105,7 +105,7 @@ export function MarkdownEditor({
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-2xl border">
       <div className="hidden md:flex flex-wrap items-center gap-0.5 border-b bg-muted/40 px-1 py-0.5">
         <ToolbarItem label="Bold" active={is((e) => e.isActive("bold"))} onClick={run(() => editor.chain().focus().toggleBold().run())}>
           <Bold className="size-3.5" />

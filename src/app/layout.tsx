@@ -21,6 +21,10 @@ export const metadata: Metadata = {
     "Habits, tasks, notes and diary — your private personal hub.",
   manifest: "/manifest.webmanifest",
   icons: [{ rel: "icon", url: "/icon.svg", type: "image/svg+xml" }],
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f1e6" },
+    { media: "(prefers-color-scheme: dark)", color: "#2b241c" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

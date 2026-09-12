@@ -7,6 +7,7 @@ import { useTheme } from "next-themes"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { LogOut as LogOutIcon } from "lucide-react"
 import {
   useProfile,
   useUpdateProfile,
@@ -16,6 +17,7 @@ import {
 import { profileSchema, type ProfileFormValues } from "@/lib/schemas"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { PageHeader } from "@/components/page-header"
 import { QuickAdd } from "@/components/quick-add"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -111,6 +113,30 @@ function ThemeSection() {
         )
       })}
     </div>
+  )
+}
+
+function SessionSection() {
+  const router = useRouter()
+
+  async function signOut() {
+    await getSupabaseBrowserClient().auth.signOut()
+    router.push("/login")
+    router.refresh()
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Session</CardTitle>
+        <CardDescription>Sign out of the app on this device.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button variant="outline" onClick={signOut}>
+          <LogOutIcon className="size-4" /> Sign out
+        </Button>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -213,13 +239,10 @@ function DangerZone() {
 export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Manage your profile and preferences.</p>
-        </div>
-        <QuickAdd />
-      </div>
+      <PageHeader
+        title="Settings"
+        actions={<QuickAdd />}
+      />
 
       <Card>
         <CardHeader>
@@ -254,6 +277,8 @@ export default function SettingsPage() {
           <PasswordForm />
         </CardContent>
       </Card>
+
+      <SessionSection />
 
       <Card>
         <CardHeader>

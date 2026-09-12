@@ -8,7 +8,7 @@ import {
   isDueOnDate,
   completionRate,
 } from "@/lib/habits"
-import { colorSwatch } from "@/lib/colors"
+import { colorSoft } from "@/lib/colors"
 import type { Habit, HabitLog } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { useToggleLog } from "@/features/habits/use-habits"
@@ -58,15 +58,15 @@ export function HabitCard({
         <div className="flex items-start gap-3">
           <span
             className={cn(
-              "mt-1 grid size-10 shrink-0 place-items-center rounded-xl text-xl",
-              colorSwatch(habit.color),
+              "mt-1 grid size-10 shrink-0 place-items-center rounded-2xl text-xl shadow-sm",
+              colorSoft(habit.color),
             )}
             aria-hidden
           >
             {habit.emoji}
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate font-semibold">{habit.name}</h3>
+            <h3 className="truncate font-semibold tracking-tight">{habit.name}</h3>
             <p className="text-xs text-muted-foreground">
               {habit.frequency_type === "every_n_days"
                 ? `Every ${habit.frequency_value.every ?? 2} days`
@@ -74,12 +74,12 @@ export function HabitCard({
               {weeklyTarget !== null && ` · ${week}/${weeklyTarget} this week`}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1">
             <span
               className={cn(
-                "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
                 streak > 0
-                  ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
+                  ? "bg-chart-1/12 text-chart-1"
                   : "bg-muted text-muted-foreground",
               )}
             >
@@ -123,7 +123,7 @@ export function HabitCard({
                 data-checkin-date={iso}
                 aria-label={`Toggle ${humanDate(iso)} check-in`}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1 rounded-md py-1 transition",
+                  "flex flex-1 flex-col items-center gap-1 rounded-full py-1 transition",
                   isFuture && "opacity-40",
                   !isFuture && "hover:bg-accent/60",
                 )}
@@ -131,11 +131,11 @@ export function HabitCard({
                 <span
                   className={cn(
                     "size-2 rounded-full transition",
-                    done ? "bg-green-500" : due ? "bg-muted" : "bg-border",
+                    done ? "bg-chart-1" : due ? "bg-muted" : "bg-border",
                   )}
                 />
                 {done ? (
-                  <CheckCircle2 className="size-5 text-green-600" />
+                  <CheckCircle2 className="size-5 text-chart-1" />
                 ) : (
                   <Circle
                     className={cn(

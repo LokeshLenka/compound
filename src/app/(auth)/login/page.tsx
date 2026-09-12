@@ -13,9 +13,6 @@ import { Label } from "@/components/ui/label"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -106,12 +103,12 @@ function AuthForm({ mode }: { mode: "signin" | "signup" }) {
       </div>
 
       {serverError && (
-        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p className="rounded-2xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {serverError}
         </p>
       )}
       {sentEmail && (
-        <p className="rounded-md border bg-muted px-3 py-2 text-sm">
+        <p className="rounded-2xl border bg-muted px-3 py-2 text-sm">
           Check your inbox to confirm your email, then sign in.
         </p>
       )}
@@ -126,34 +123,52 @@ function AuthForm({ mode }: { mode: "signin" | "signup" }) {
 
 function LoginCard() {
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Personal Hub</CardTitle>
-        <CardDescription>
-          Habits, tasks, notes & diary in one private place.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="signin">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Sign in</TabsTrigger>
-            <TabsTrigger value="signup">Create account</TabsTrigger>
-          </TabsList>
-          <TabsContent value="signin" className="mt-4">
-            <AuthForm mode="signin" />
-          </TabsContent>
-          <TabsContent value="signup" className="mt-4">
-            <AuthForm mode="signup" />
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+    <div className="w-full max-w-sm">
+      <div className="mb-6 flex flex-col items-center gap-3 text-center">
+        <span className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary/70 text-xl font-bold text-primary-foreground shadow-lg shadow-primary/20">
+          H
+        </span>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Personal Hub</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Habits, tasks, notes &amp; diary in one private place.
+          </p>
+        </div>
+      </div>
+
+      <Card className="w-full border-border/60">
+        <CardContent className="pt-6">
+          <Tabs defaultValue="signin">
+            <TabsList className="grid w-full grid-cols-2 gap-1 rounded-full p-1">
+              <TabsTrigger value="signin" className="rounded-full">
+                Sign in
+              </TabsTrigger>
+              <TabsTrigger value="signup" className="rounded-full">
+                Create account
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="signin" className="mt-5">
+              <AuthForm mode="signin" />
+            </TabsContent>
+            <TabsContent value="signup" className="mt-5">
+              <AuthForm mode="signup" />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
+        Your data stays private to your account.
+        <br />
+        Built for the long game — daily streaks, quiet notes, one journal.
+      </p>
+    </div>
   )
 }
 
 export default function LoginPage() {
   return (
-    <main className="flex flex-1 items-center justify-center p-4">
+    <main className="relative flex min-h-dvh flex-1 items-center justify-center p-4">
       <Suspense fallback={null}>
         <LoginCard />
       </Suspense>

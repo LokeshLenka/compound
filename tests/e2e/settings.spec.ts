@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test"
 import { registerAndLogin } from "./helpers"
 
-test("update profile name and see it in the sidebar", async ({ page }) => {
+test("update profile name and see it in the rail avatar", async ({ page }) => {
   await registerAndLogin(page)
   await page.getByRole("link", { name: "Settings", exact: true }).click()
   await page.getByRole("heading", { name: "Settings" }).waitFor()
@@ -10,8 +10,8 @@ test("update profile name and see it in the sidebar", async ({ page }) => {
   await page.getByRole("button", { name: "Save", exact: true }).click()
   await expect(page.getByText("Profile updated")).toBeVisible()
 
-  // Sidebar avatar name reflects the change
-  await expect(page.getByText("Test User").first()).toBeVisible()
+  // Rail avatar initials reflect the change (Test User → TU)
+  await expect(page.getByText("TU").first()).toBeVisible()
 })
 
 test("delete confirmation dialog opens", async ({ page }) => {

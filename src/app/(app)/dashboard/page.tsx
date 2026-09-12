@@ -1,12 +1,13 @@
 "use client"
 
+import { useEffect } from "react"
 import Link from "next/link"
 import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
   FileText,
-  Flame,
+  PenLine,
   Repeat,
 } from "lucide-react"
 import { useHabits, useHabitLogs, useToggleLog } from "@/features/habits/use-habits"
@@ -15,13 +16,12 @@ import { useNotes } from "@/features/notes/use-notes"
 import { useDiaryEntries } from "@/features/diary/use-diary"
 import { isDueToday } from "@/lib/habits"
 import { todayISO, humanDate } from "@/lib/dates"
-import { STATUS_META } from "@/features/tasks/meta"
 import { cn } from "@/lib/utils"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
+import { PageHeader } from "@/components/page-header"
 import { QuickAdd } from "@/components/quick-add"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from "@/components/ui/badge"
 
 export default function DashboardPage() {
   const { data: habits } = useHabits()
@@ -56,17 +56,27 @@ export default function DashboardPage() {
   const checkinsToday = dueHabits.filter((h) => todayLogs.has(h.id)).length
   const recentNotes = (notes ?? []).slice(0, 3)
 
+  // Installed-app badge: today's open items (best-effort, no-op unsupported)
+  useEffect(() => {
+    try {
+      const nav = navigator as Navigator & {
+        setAppBadge?: (n: number) => Promise<void>
+        clearAppBadge?: () => Promise<void>
+      }
+      const open = dueHabits.length - checkinsToday + dueTasks.length
+      if (open > 0) void nav.setAppBadge?.(open)
+      else void nav.clearAppBadge?.()
+    } catch {
+      /* badge unsupported — ignore */
+    }
+  }, [dueHabits.length, checkinsToday, dueTasks.length])
+
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            {humanDate(today, "EEEE, MMMM d")} — here’s your day at a glance.
-          </p>
-        </div>
-        <QuickAdd />
-      </header>
+      <PageHeader
+        title="Dashboard"
+        actions={<QuickAdd />}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -74,24 +84,28 @@ export default function DashboardPage() {
           label="Habit check-ins"
           value={`${checkinsToday}/${dueHabits.length}`}
           href="/habits"
+          tint="habits"
         />
         <StatCard
           icon={<CheckCircle2 className="size-4" />}
-          label="Tasks completed today"
+          label="Tasks done today"
           value={String(doneToday)}
           href="/tasks"
+          tint="tasks"
         />
         <StatCard
           icon={<FileText className="size-4" />}
           label="Notes"
           value={String(notes?.length ?? 0)}
           href="/notes"
+          tint="notes"
         />
         <StatCard
           icon={<BookOpen className="size-4" />}
           label={todayDiary ? "Diary written" : "Diary pending"}
           value={todayDiary ? "Done" : "—"}
           href="/diary"
+          tint="diary"
         />
       </div>
 
@@ -101,9 +115,9 @@ export default function DashboardPage() {
             <CardTitle className="text-base">Today’s habits</CardTitle>
             <Link
               href="/habits"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
             >
-              All habits <ArrowRight className="ml-1 size-3.5" />
+              All habits <ArrowRight className="size-3.5" />
             </Link>
           </CardHeader>
           <CardContent className="space-y-1">
@@ -112,12 +126,12 @@ export default function DashboardPage() {
                 Nothing due today. Enjoy it!
               </p>
             ) : (
-              dueHabits.map((h) => {
+              dueHabits.slice(0, 6).map((h) => {
                 const done = todayLogs.has(h.id)
                 return (
                   <div
                     key={h.id}
-                    className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-accent/50"
+                    className="flex items-center gap-2.5 rounded-2xl px-2 py-2 transition-colors hover:bg-muted/60"
                   >
                     <Checkbox
                       checked={done}
@@ -126,11 +140,15 @@ export default function DashboardPage() {
                       }
                       aria-label={`${h.name} today`}
                     />
-                    <span className="text-lg" aria-hidden>{h.emoji}</span>
-                    <span className={cn("flex-1 text-sm font-medium", done && "text-muted-foreground line-through")}>
+                    <span aria-hidden className="text-base leading-none">{h.emoji}</span>
+                    <span
+                      className={cn(
+                        "min-w-0 flex-1 truncate text-sm font-medium",
+                        done && "text-muted-foreground line-through",
+                      )}
+                    >
                       {h.name}
                     </span>
-                    {done && <Badge className="text-xs">Done</Badge>}
                   </div>
                 )
               })
@@ -143,21 +161,21 @@ export default function DashboardPage() {
             <CardTitle className="text-base">Due tasks</CardTitle>
             <Link
               href="/tasks"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
             >
-              All tasks <ArrowRight className="ml-1 size-3.5" />
+              All tasks <ArrowRight className="size-3.5" />
             </Link>
           </CardHeader>
           <CardContent className="space-y-1">
             {dueTasks.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
-                All clear — no open tasks.
+                All clear. Add a task to stay ahead.
               </p>
             ) : (
               dueTasks.map((t) => (
                 <div
                   key={t.id}
-                  className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-accent/50"
+                  className="flex items-center gap-2.5 rounded-2xl px-2 py-2 transition-colors hover:bg-muted/60"
                 >
                   <Checkbox
                     checked={false}
@@ -166,53 +184,51 @@ export default function DashboardPage() {
                     }
                     aria-label={t.title}
                   />
-                  <span className="flex-1 truncate text-sm font-medium">{t.title}</span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                    {t.title}
+                  </span>
                   {t.due_date && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="shrink-0 text-xs text-muted-foreground">
                       {t.due_date.slice(0, 10) === today
-                        ? "today"
+                        ? "due today"
                         : t.due_date.slice(0, 10) < today
                           ? "overdue"
-                          : null}
+                          : t.due_date.slice(0, 10)}
                     </span>
                   )}
-                  <span className="text-[10px] uppercase text-muted-foreground">
-                    {STATUS_META[t.status].label}
-                  </span>
                 </div>
               ))
             )}
           </CardContent>
         </Card>
-      </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-base">Diary</CardTitle>
             <Link
               href="/diary"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
             >
-              Open diary <ArrowRight className="ml-1 size-3.5" />
+              {todayDiary ? "Read entry" : "Write entry"}{" "}
+              <ArrowRight className="size-3.5" />
             </Link>
           </CardHeader>
           <CardContent>
             {todayDiary ? (
-              <div className="space-y-1">
-                <p className="text-sm font-semibold">
-                  {todayDiary.title || "Today’s entry"}
+              <div>
+                <p className="truncate text-sm font-medium">
+                  {todayDiary.title || "Today's entry"}
                 </p>
-                <p className="line-clamp-3 text-sm text-muted-foreground">
-                  {todayDiary.content.replace(/[#>*`\[\]()!~\-]/g, " ").replace(/\s+/g, " ").slice(0, 220)}
+                <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
+                  {todayDiary.content.replace(/[#>*`[\]()!~\-]/g, " ").replace(/\s+/g, " ").slice(0, 140)}
                 </p>
               </div>
             ) : (
               <Link
                 href="/diary"
-                className={cn(buttonVariants({ variant: "outline" }), "w-full")}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/80"
               >
-                Write today’s entry
+                <PenLine className="size-4" /> Write today&apos;s entry
               </Link>
             )}
           </CardContent>
@@ -223,24 +239,24 @@ export default function DashboardPage() {
             <CardTitle className="text-base">Recent notes</CardTitle>
             <Link
               href="/notes"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
             >
-              All notes <ArrowRight className="ml-1 size-3.5" />
+              All notes <ArrowRight className="size-3.5" />
             </Link>
           </CardHeader>
           <CardContent className="space-y-1">
             {recentNotes.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
-                No notes yet.
+                No notes yet — quiet notes live here.
               </p>
             ) : (
               recentNotes.map((n) => (
                 <Link
                   key={n.id}
                   href="/notes"
-                  className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-accent/50"
+                  className="flex items-center gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-muted/60"
                 >
-                  <Flame className="size-3.5 text-muted-foreground" aria-hidden />
+                  <span className="mt-1 size-2 shrink-0 rounded-full bg-chart-3" aria-hidden />
                   <span className="flex-1 truncate text-sm font-medium">
                     {n.title || "Untitled"}
                   </span>
@@ -262,22 +278,33 @@ function StatCard({
   label,
   value,
   href,
+  tint,
 }: {
   icon: React.ReactNode
   label: string
   value: string
   href: string
+  tint: "habits" | "tasks" | "notes" | "diary"
 }) {
+  const chips: Record<string, string> = {
+    habits: "bg-chart-1/12 text-chart-1",
+    tasks: "bg-chart-2/12 text-chart-2",
+    notes: "bg-chart-3/12 text-chart-3",
+    diary: "bg-chart-4/12 text-chart-4",
+  }
   return (
-    <Link href={href}>
-      <Card className="transition hover:border-primary/50">
+    <Link
+      href={href}
+      className="group/card rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    >
+      <Card className="h-full rounded-3xl transition-colors duration-200 group-hover/card:border-primary/40">
         <CardContent className="flex items-center gap-3 p-4">
-          <span className="grid size-9 place-items-center rounded-lg bg-muted text-muted-foreground">
+          <span className={cn("grid size-10 shrink-0 place-items-center rounded-full", chips[tint])}>
             {icon}
           </span>
-          <div>
-            <p className="text-xl font-bold leading-none">{value}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+          <div className="min-w-0">
+            <p className="text-2xl font-bold leading-none tracking-tight tabular-nums">{value}</p>
+            <p className="mt-1 truncate text-xs font-medium text-muted-foreground">{label}</p>
           </div>
         </CardContent>
       </Card>

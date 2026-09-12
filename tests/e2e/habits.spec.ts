@@ -17,9 +17,9 @@ test.describe("habits", () => {
     const todayCell = page.locator('[data-checkin-today="true"]').last()
     await todayCell.click()
 
-    // Saved check-in should show a green dot for today
+    // Saved check-in should show the habits-hue dot for today
     await expect(
-      todayCell.locator(".bg-green-500"),
+      todayCell.locator(".bg-chart-1"),
     ).toBeVisible()
   })
 

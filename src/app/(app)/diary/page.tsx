@@ -12,6 +12,7 @@ import { splitTags } from "@/lib/schemas"
 import type { DiaryEntry } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { CreateFab } from "@/components/create-fab"
+import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -77,41 +78,16 @@ export default function DiaryPage() {
     await handleSave()
   }
 
-  const journalingStreak = useMemo(() => {
-    const keys = [...(entries ?? []).map((e) => e.entry_date)].sort().reverse()
-    let streak = 0
-    const cursor = new Date()
-    for (const k of keys) {
-      if (k === todayISO()) {
-        streak++
-        cursor.setDate(cursor.getDate() - 1)
-        continue
-      }
-      const expect = new Date()
-      expect.setDate(expect.getDate() - streak)
-      const expectIso = expect.toISOString().slice(0, 10)
-      if (k === expectIso) {
-        streak++
-      } else {
-        break
-      }
-    }
-    return streak
-  }, [entries])
-
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Diary</h1>
-          <p className="text-sm text-muted-foreground">
-            One entry per day · current streak {journalingStreak} 🔥
-          </p>
-        </div>
-        <Button onClick={focusEditor}>
-          <PenLine className="mr-1 size-4" /> Write entry
-        </Button>
-      </header>
+      <PageHeader
+        title="Diary"
+        actions={
+          <Button onClick={focusEditor} className="hidden gap-1.5 md:inline-flex">
+            <PenLine className="size-4" /> Write entry
+          </Button>
+        }
+      />
 
       <div className="hidden md:block">
         <DiaryBook
@@ -166,7 +142,7 @@ export default function DiaryPage() {
                   }}
                   title={m.label}
                   className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-lg border px-2 py-1 text-lg transition",
+                    "flex flex-col items-center gap-0.5 rounded-full border px-2 py-1 text-lg transition",
                     mood === m.value
                       ? "border-primary bg-accent"
                       : "border-transparent hover:bg-accent/60",

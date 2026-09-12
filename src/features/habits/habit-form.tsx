@@ -200,7 +200,7 @@ export function HabitFormDialog({
                     type="button"
                     onClick={() => toggleDay(d)}
                     className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-md text-xs font-medium transition",
+                      "flex h-9 w-9 items-center justify-center rounded-full text-xs font-medium transition",
                       (days ?? []).includes(d)
                         ? "bg-primary text-primary-foreground"
                         : "bg-muted text-muted-foreground hover:bg-muted/60",
@@ -218,7 +218,7 @@ export function HabitFormDialog({
               <Label htmlFor="habit-times">Times per week</Label>
               <select
                 id="habit-times"
-                className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
+                className="w-full rounded-full border bg-transparent px-3 py-2 text-sm"
                 {...register("times")}
               >
                 {[1, 2, 3, 4, 5, 6, 7].map((n) => (

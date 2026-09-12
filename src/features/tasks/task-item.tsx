@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarDays, CheckCircle2, Pencil, Trash2 } from "lucide-react"
+import { CalendarDays, Pencil, Trash2 } from "lucide-react"
 import type { Task } from "@/lib/types"
 import { humanDate } from "@/lib/dates"
 import { useSetTaskStatus, useDeleteTask } from "@/features/tasks/use-tasks"
@@ -54,7 +54,7 @@ export function TaskRow({
         e.dataTransfer.effectAllowed = "move"
       }}
       className={cn(
-        "group flex items-start gap-3 rounded-lg border bg-card p-3",
+        "group flex items-start gap-3 rounded-3xl border border-border/60 bg-card p-3 transition-colors hover:border-border card-shadow",
         done && "opacity-60",
         highlighted && "ring-2 ring-primary",
       )}
@@ -103,7 +103,7 @@ export function TaskRow({
           ))}
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-0.5 opacity-70 transition group-hover:opacity-100">
+      <div className="flex shrink-0 items-center gap-0.5 opacity-70 transition group-focus-within:opacity-100 group-hover:opacity-100">
         <Button
           variant="ghost"
           size="icon"
@@ -123,7 +123,6 @@ export function TaskRow({
           <Trash2 className="size-3.5" />
         </Button>
       </div>
-      <CheckCircle2 className="hidden" />
     </div>
   )
 }

@@ -28,9 +28,10 @@ import {
   isDueOnDate,
 } from "@/lib/habits"
 import { lastNDates, monthKey, monthLabel, lastMonthsISO, todayISO, humanDate } from "@/lib/dates"
-import { colorSwatch } from "@/lib/colors"
+import { colorSoft } from "@/lib/colors"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import type { Habit } from "@/lib/types"
@@ -95,39 +96,43 @@ export default function HabitStatsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex items-center gap-2">
         <Link
           href="/habits"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2 h-8")}
+          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2 h-8 gap-1")}
         >
           <ArrowLeft className="size-3.5" /> Habits
         </Link>
-        <h1 className="text-2xl font-bold">Habit analytics</h1>
-        <p className="text-sm text-muted-foreground">
-          Trends, streaks and consistency for all your habits.
-        </p>
       </div>
+
+      <PageHeader
+        title="Habit analytics"
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<Repeat className="size-4" />}
           label="Active habits"
           value={String(habits.length)}
+          tint="chart-1"
         />
         <StatCard
           icon={<CheckCircle2 className="size-4" />}
           label="Check-ins · last 30 days"
           value={String(total30)}
+          tint="chart-2"
         />
         <StatCard
           icon={<Target className="size-4" />}
           label="Avg completion · 30d"
           value={`${avgRate}%`}
+          tint="chart-4"
         />
         <StatCard
           icon={<Flame className="size-4" />}
           label="Best current streak"
           value={String(bestCurrent)}
+          tint="chart-1"
         />
       </div>
 
@@ -149,9 +154,11 @@ export default function HabitStatsPage() {
             ranked.map((r, i) => (
               <div key={r.habit.id} className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <span className="w-4 text-xs text-muted-foreground">{i + 1}</span>
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-[10px] font-semibold text-muted-foreground">
+                    {i + 1}
+                  </span>
                   <span
-                    className={cn("grid size-8 place-items-center rounded-lg text-base", colorSwatch(r.habit.color))}
+                    className={cn("grid size-8 shrink-0 place-items-center rounded-full text-base", colorSoft(r.habit.color))}
                     aria-hidden
                   >
                     {r.habit.emoji}
@@ -159,7 +166,7 @@ export default function HabitStatsPage() {
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">
                     {r.habit.name}
                   </span>
-                  <span className="flex items-center gap-1 text-xs font-medium text-orange-600 dark:text-orange-400">
+                  <span className="flex items-center gap-1 text-xs font-medium text-chart-1">
                     <Flame className="size-3.5" /> {r.current}
                   </span>
                   <span className="w-12 text-right text-xs text-muted-foreground">
@@ -182,20 +189,28 @@ function StatCard({
   icon,
   label,
   value,
+  tint,
 }: {
   icon: React.ReactNode
   label: string
   value: string
+  tint: "chart-1" | "chart-2" | "chart-3" | "chart-4"
 }) {
+  const chip = {
+    "chart-1": "bg-chart-1/12 text-chart-1",
+    "chart-2": "bg-chart-2/12 text-chart-2",
+    "chart-3": "bg-chart-3/12 text-chart-3",
+    "chart-4": "bg-chart-4/12 text-chart-4",
+  }[tint]
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-4">
-        <span className="grid size-9 place-items-center rounded-lg bg-muted text-muted-foreground">
+        <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl", chip)}>
           {icon}
         </span>
-        <div>
-          <p className="text-2xl font-bold leading-none">{value}</p>
-          <p className="text-xs text-muted-foreground">{label}</p>
+        <div className="min-w-0">
+          <p className="text-2xl font-bold leading-none tracking-tight tabular-nums">{value}</p>
+          <p className="mt-1 truncate text-xs font-medium text-muted-foreground">{label}</p>
         </div>
       </CardContent>
     </Card>
@@ -258,7 +273,7 @@ function DetailGrid({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span
-                    className={cn("grid size-10 place-items-center rounded-xl text-xl", colorSwatch(r.habit.color))}
+                    className={cn("grid size-10 shrink-0 place-items-center rounded-xl text-xl shadow-sm", colorSoft(r.habit.color))}
                     aria-hidden
                   >
                     {r.habit.emoji}
@@ -317,7 +332,7 @@ function Metric({
 }) {
   return (
     <div>
-      <p className={cn("text-lg font-bold leading-none", accent && "text-orange-600 dark:text-orange-400")}>
+      <p className={cn("text-lg font-bold leading-none", accent && "text-chart-1")}>
         {value}
       </p>
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -346,7 +361,7 @@ function HeatmapRow({
               key={d}
               title={`${humanDate(d)}${done ? " · done" : ""}`}
               className={cn(
-                "size-3 shrink-0 rounded-[4px]",
+                "size-3 shrink-0 rounded-full",
                 done
                   ? "bg-primary"
                   : due
