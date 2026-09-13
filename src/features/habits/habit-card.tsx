@@ -55,10 +55,10 @@ export function HabitCard({
   return (
     <Card className="h-fit">
       <CardContent className="space-y-3 p-4">
-        <div className="flex items-start gap-3">
+        <div className="flex items-center gap-2.5">
           <span
             className={cn(
-              "mt-1 grid size-10 shrink-0 place-items-center rounded-2xl text-xl shadow-sm",
+              "grid size-9 shrink-0 place-items-center rounded-xl text-lg shadow-sm",
               colorSoft(habit.color),
             )}
             aria-hidden
@@ -66,47 +66,51 @@ export function HabitCard({
             {habit.emoji}
           </span>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate font-semibold tracking-tight">{habit.name}</h3>
-            <p className="text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <h3 className="truncate text-sm font-semibold tracking-tight">{habit.name}</h3>
+              <span
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none",
+                  streak > 0
+                    ? "bg-chart-1/12 text-chart-1"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                <Flame className="size-2.5" />
+                {streak}
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
               {habit.frequency_type === "every_n_days"
                 ? `Every ${habit.frequency_value.every ?? 2} days`
                 : FREQ_LABELS[habit.frequency_type]}
               {weeklyTarget !== null && ` · ${week}/${weeklyTarget} this week`}
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <span
-              className={cn(
-                "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
-                streak > 0
-                  ? "bg-chart-1/12 text-chart-1"
-                  : "bg-muted text-muted-foreground",
-              )}
-            >
-              <Flame className="size-3" />
-              {streak}
-            </span>
+          <div className="flex shrink-0 items-center">
             {dragHandle}
             <Button
               variant="ghost"
               size="icon"
+              className="size-7"
               aria-label={`Edit ${habit.name}`}
               onClick={() => onEdit(habit)}
             >
-              <Pencil className="size-4" />
+              <Pencil className="size-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
+              className="size-7"
               aria-label={`Delete ${habit.name}`}
               onClick={() => onDelete(habit)}
             >
-              <Trash2 className="size-4 text-muted-foreground" />
+              <Trash2 className="size-3.5 text-muted-foreground" />
             </Button>
           </div>
         </div>
 
-        <div className="flex justify-between gap-1">
+        <div className="flex justify-between gap-0.5">
           {strip.map((iso) => {
             const done = logSet.has(iso)
             const due = isDueOnDate(habit, iso)
@@ -123,28 +127,28 @@ export function HabitCard({
                 data-checkin-date={iso}
                 aria-label={`Toggle ${humanDate(iso)} check-in`}
                 className={cn(
-                  "flex flex-1 flex-col items-center gap-1 rounded-full py-1 transition",
+                  "flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1 transition",
                   isFuture && "opacity-40",
                   !isFuture && "hover:bg-accent/60",
                 )}
               >
                 <span
                   className={cn(
-                    "size-2 rounded-full transition",
+                    "size-1.5 rounded-full transition",
                     done ? "bg-chart-1" : due ? "bg-muted" : "bg-border",
                   )}
                 />
                 {done ? (
-                  <CheckCircle2 className="size-5 text-chart-1" />
+                  <CheckCircle2 className="size-4 text-chart-1" />
                 ) : (
                   <Circle
                     className={cn(
-                      "size-5",
+                      "size-4",
                       isToday ? "text-primary" : "text-muted-foreground/60",
                     )}
                   />
                 )}
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[9px] leading-none text-muted-foreground">
                   {humanDate(iso, "EEE").slice(0, 2)}
                 </span>
               </button>
