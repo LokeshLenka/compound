@@ -8,8 +8,18 @@ import {
   CheckCircle2,
   Circle,
   ArrowUpRight,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useRef, useState } from "react";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/sheet";
 import type { Task, TaskStatus } from "@/lib/types";
 import { humanDate } from "@/lib/dates";
 import { useSetTaskStatus, useDeleteTask } from "@/features/tasks/use-tasks";
@@ -23,13 +33,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 function DueBadge({ task }: { task: Task }) {
   if (!task.due_date || task.status === "done") return null;
@@ -89,6 +92,7 @@ export function TaskRow({
 }) {
   const setStatus = useSetTaskStatus();
   const deleteTask = useDeleteTask();
+  const [sheetOpen, setSheetOpen] = useState(false);
   const done = task.status === "done";
   const StatusIcon = STATUS_ICONS[task.status];
 
@@ -170,40 +174,56 @@ export function TaskRow({
           </div>
         </button>
 
-<DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0"
-                  aria-label={`Actions for ${task.title}`}
-                >
-                  <MoreVertical className="size-4" />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end" side="bottom" sideOffset={4} className="min-w-[140px]">
-              <DropdownMenuItem onClick={() => onEdit(task)}>
-                <Pencil className="size-3.5" /> Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  setStatus.mutate({
-                    id: task.id,
-                    status: nextStatus[task.status],
-                  })
-                }
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0"
+                aria-label={`Actions for ${task.title}`}
               >
-                <StatusIcon className="size-3.5" />
+                <MoreVertical className="size-4" />
+              </Button>
+            }
+          />
+          <SheetContent side="bottom" className="p-0">
+            <SheetHeader className="flex items-center justify-between px-4 py-3 border-b">
+              <SheetTitle className="text-sm font-medium">Actions</SheetTitle>
+              <SheetClose>
+                <Button variant="ghost" size="icon" className="size-8">
+                  <X className="size-4" />
+                </Button>
+              </SheetClose>
+            </SheetHeader>
+            <div className="px-4 py-2 space-y-2">
+              <motion.button
+                onClick={() => { onEdit(task); setSheetOpen(false) }}
+                whileTap={{ scale: 0.98 }}
+                className="flex w-full items-center gap-3 px-3 py-3 rounded-xl text-left text-sm font-medium hover:bg-accent transition-colors"
+              >
+                <Pencil className="size-5 text-muted-foreground" />
+                Edit
+              </motion.button>
+              <motion.button
+                onClick={() => { setStatus.mutate({ id: task.id, status: nextStatus[task.status] }); setSheetOpen(false) }}
+                whileTap={{ scale: 0.98 }}
+                className="flex w-full items-center gap-3 px-3 py-3 rounded-xl text-left text-sm font-medium hover:bg-accent transition-colors"
+              >
+                <StatusIcon className="size-5 text-muted-foreground" />
                 {STATUS_META[nextStatus[task.status]].label}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => deleteTask.mutate(task.id)}>
-                <Trash2 className="size-3.5" /> Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </motion.button>
+              <motion.button
+                onClick={() => { deleteTask.mutate(task.id); setSheetOpen(false) }}
+                whileTap={{ scale: 0.98 }}
+                className="flex w-full items-center gap-3 px-3 py-3 rounded-xl text-left text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+              >
+                <Trash2 className="size-5" />
+                Delete
+              </motion.button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Desktop layout */}
@@ -269,10 +289,22 @@ export function TaskRow({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-0.5 opacity-70 transition group-focus-within:opacity-100 group-hover:opacity-100">
-          <Button variant="ghost" size="icon" className="size-8" aria-label={`Edit ${task.title}`} onClick={() => onEdit(task)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label={`Edit ${task.title}`}
+            onClick={() => onEdit(task)}
+          >
             <Pencil className="size-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="size-8" aria-label={`Delete ${task.title}`} onClick={() => deleteTask.mutate(task.id)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            aria-label={`Delete ${task.title}`}
+            onClick={() => deleteTask.mutate(task.id)}
+          >
             <Trash2 className="size-3.5" />
           </Button>
         </div>
