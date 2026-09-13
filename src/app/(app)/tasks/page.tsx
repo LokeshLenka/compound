@@ -155,7 +155,7 @@ function TasksPageContent() {
               key={f.value}
               variant={filter === f.value ? "secondary" : "ghost"}
               size="sm"
-              className="h-7 rounded-full"
+              className="h-9 rounded-full md:h-7"
               onClick={() => setFilter(f.value)}
             >
               {f.label}
@@ -205,7 +205,7 @@ function TasksPageContent() {
           <Button
             variant={view === "list" ? "secondary" : "ghost"}
             size="sm"
-            className="h-7 rounded-full"
+            className="h-9 rounded-full md:h-7"
             onClick={() => setView("list")}
           >
             <List className="mr-1 size-3.5" /> List
@@ -213,7 +213,7 @@ function TasksPageContent() {
           <Button
             variant={view === "board" ? "secondary" : "ghost"}
             size="sm"
-            className="h-7 rounded-full"
+            className="h-9 rounded-full md:h-7"
             onClick={() => setView("board")}
           >
             <Columns3 className="mr-1 size-3.5" /> Board

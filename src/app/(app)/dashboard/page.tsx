@@ -142,7 +142,7 @@ export default function DashboardPage() {
             <CardTitle className="text-base">Habits to check off</CardTitle>
             <Link
               href="/habits"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
             >
               All habits <ArrowRight className="size-3.5" />
             </Link>
@@ -188,7 +188,7 @@ export default function DashboardPage() {
             <CardTitle className="text-base">Tasks to clear</CardTitle>
             <Link
               href="/tasks"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
             >
               All tasks <ArrowRight className="size-3.5" />
             </Link>
@@ -234,7 +234,7 @@ export default function DashboardPage() {
             <CardTitle className="text-base">Water right now</CardTitle>
             <Link
               href="/water"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
             >
               Details <ArrowRight className="size-3.5" />
             </Link>
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                   type="button"
                   disabled={addWater.isPending}
                   onClick={() => addWater.mutate({ amount_ml: amt })}
-                  className="inline-flex h-9 items-center justify-center gap-1 rounded-full bg-chart-water/15 text-sm font-semibold text-chart-water transition-colors hover:bg-chart-water/25 active:scale-95 disabled:opacity-50"
+                  className="inline-flex h-11 items-center justify-center gap-1 rounded-full bg-chart-water/15 text-sm font-semibold text-chart-water transition-colors hover:bg-chart-water/25 active:scale-95 disabled:opacity-50"
                 >
                   <Droplet className="size-3.5" aria-hidden />+{formatAmount(amt, waterUnit)}
                 </button>
@@ -267,7 +267,7 @@ export default function DashboardPage() {
             <CardTitle className="text-base">Diary</CardTitle>
             <Link
               href="/diary"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
             >
               {todayDiary ? "Read entry" : "Open diary"}{" "}
               <ArrowRight className="size-3.5" />
@@ -299,7 +299,7 @@ export default function DashboardPage() {
             <CardTitle className="text-base">Recent notes</CardTitle>
             <Link
               href="/notes"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
             >
               All notes <ArrowRight className="size-3.5" />
             </Link>
