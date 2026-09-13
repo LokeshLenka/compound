@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { motion, AnimatePresence } from "motion/react"
-import { useEffect } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { motion, AnimatePresence } from "motion/react";
+import { useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Droplet,
@@ -13,97 +13,112 @@ import {
   Repeat,
   CheckCircle2,
   Flame,
-} from "lucide-react"
-import { useHabits, useHabitLogs, useToggleLog } from "@/features/habits/use-habits"
-import { useTasks, useSetTaskStatus } from "@/features/tasks/use-tasks"
-import { useNotes } from "@/features/notes/use-notes"
-import { useDiaryEntries } from "@/features/diary/use-diary"
-import { useWaterLogs, useWaterSettings, useAddWater } from "@/features/water/use-water"
-import { isDueToday } from "@/lib/habits"
-import { colorSoft } from "@/lib/colors"
-import { todayISO, humanDate } from "@/lib/dates"
-import { totalMl, formatAmount, progressPct, remainingMl } from "@/lib/water"
-import { cn } from "@/lib/utils"
-import { buttonVariants } from "@/components/ui/button"
-import { PageHeader } from "@/components/page-header"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { StaggerGrid, StaggerItem } from "@/components/stagger-grid"
-import { CreateFab } from "@/components/create-fab"
+  PlusCircle,
+} from "lucide-react";
+import {
+  useHabits,
+  useHabitLogs,
+  useToggleLog,
+} from "@/features/habits/use-habits";
+import { useTasks, useSetTaskStatus } from "@/features/tasks/use-tasks";
+import { useNotes } from "@/features/notes/use-notes";
+import { useDiaryEntries } from "@/features/diary/use-diary";
+import {
+  useWaterLogs,
+  useWaterSettings,
+  useAddWater,
+} from "@/features/water/use-water";
+import { isDueToday } from "@/lib/habits";
+import { colorSoft } from "@/lib/colors";
+import { todayISO, humanDate } from "@/lib/dates";
+import { totalMl, formatAmount, progressPct, remainingMl } from "@/lib/water";
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { StaggerGrid, StaggerItem } from "@/components/stagger-grid";
+import { CreateFab } from "@/components/create-fab";
 
 function greeting(now = new Date()): string {
-  const h = now.getHours()
-  if (h < 5) return "Up late"
-  if (h < 12) return "Good morning"
-  if (h < 18) return "Good afternoon"
-  return "Good evening"
+  const h = now.getHours();
+  if (h < 5) return "Up late";
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 export default function DashboardPage() {
-  const router = useRouter()
-  const { data: habits = [] } = useHabits()
-  const { data: allLogs = [] } = useHabitLogs()
-  const { data: tasks = [] } = useTasks()
-  const { data: notes = [] } = useNotes()
-  const { data: diary } = useDiaryEntries()
-  const { data: waterLogs = [] } = useWaterLogs()
-  const { data: waterSettings } = useWaterSettings()
-  const toggleLog = useToggleLog()
-  const setStatus = useSetTaskStatus()
-  const addWater = useAddWater()
+  const router = useRouter();
+  const { data: habits = [] } = useHabits();
+  const { data: allLogs = [] } = useHabitLogs();
+  const { data: tasks = [] } = useTasks();
+  const { data: notes = [] } = useNotes();
+  const { data: diary } = useDiaryEntries();
+  const { data: waterLogs = [] } = useWaterLogs();
+  const { data: waterSettings } = useWaterSettings();
+  const toggleLog = useToggleLog();
+  const setStatus = useSetTaskStatus();
+  const addWater = useAddWater();
 
-  const today = todayISO()
-  const now = new Date()
+  const today = todayISO();
+  const now = new Date();
 
-  const dueHabits = habits.filter(isDueToday)
+  const dueHabits = habits.filter(isDueToday);
   const todayLogs = new Set(
     allLogs.filter((l) => l.log_date === today).map((l) => l.habit_id),
-  )
-  const completedHabits = dueHabits.filter((h) => todayLogs.has(h.id))
-  const pendingHabits = dueHabits.filter((h) => !todayLogs.has(h.id))
+  );
+  const completedHabits = dueHabits.filter((h) => todayLogs.has(h.id));
+  const pendingHabits = dueHabits.filter((h) => !todayLogs.has(h.id));
 
   const openTasks = tasks
     .filter((t) => t.status !== "done" && t.status !== "archived")
     .sort((a, b) => {
-      const da = a.due_date ?? "9999-12-31"
-      const db = b.due_date ?? "9999-12-31"
-      return da < db ? -1 : da > db ? 1 : 0
-    })
+      const da = a.due_date ?? "9999-12-31";
+      const db = b.due_date ?? "9999-12-31";
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
 
-  const todayDiary = diary?.find((e) => e.entry_date === today)
+  const todayDiary = diary?.find((e) => e.entry_date === today);
 
-  const waterUnit = waterSettings?.water_unit ?? "ml"
-  const waterGoal = waterSettings?.water_goal_ml ?? 2500
-  const waterPresets = (waterSettings?.water_quick_amounts ?? [200, 400, 800]).slice(0, 3)
+  const waterUnit = waterSettings?.water_unit ?? "ml";
+  const waterGoal = waterSettings?.water_goal_ml ?? 2500;
+  const waterPresets = (
+    waterSettings?.water_quick_amounts ?? [150, 250, 350]
+  ).slice(0, 3);
   const waterToday = totalMl(
     waterLogs.filter((l) => {
-      const d = new Date(l.drank_at)
+      const d = new Date(l.drank_at);
       return (
         d.getFullYear() === now.getFullYear() &&
         d.getMonth() === now.getMonth() &&
         d.getDate() === now.getDate()
-      )
+      );
     }),
-  )
-  const waterDone = waterToday >= waterGoal
-  const waterPct = progressPct(waterToday, waterGoal)
+  );
+  const waterDone = waterToday >= waterGoal;
+  const waterPct = progressPct(waterToday, waterGoal);
 
-  const openCount = pendingHabits.length + openTasks.length + (todayDiary ? 0 : 1) + (waterDone ? 0 : 1)
+  const openCount =
+    pendingHabits.length +
+    openTasks.length +
+    (todayDiary ? 0 : 1) +
+    (waterDone ? 0 : 1);
 
   useEffect(() => {
     try {
       const nav = navigator as Navigator & {
-        setAppBadge?: (n: number) => Promise<void>
-        clearAppBadge?: () => Promise<void>
-      }
-      if (openCount > 0) void nav.setAppBadge?.(openCount)
-      else void nav.clearAppBadge?.()
+        setAppBadge?: (n: number) => Promise<void>;
+        clearAppBadge?: () => Promise<void>;
+      };
+      if (openCount > 0) void nav.setAppBadge?.(openCount);
+      else void nav.clearAppBadge?.();
     } catch {
       /* badge unsupported — ignore */
     }
-  }, [openCount])
+  }, [openCount]);
 
-  const habitItems = [...completedHabits, ...pendingHabits]
+  const habitItems = [...completedHabits, ...pendingHabits];
 
   return (
     <div className="space-y-5">
@@ -120,7 +135,8 @@ export default function DashboardPage() {
           <>everything is done. Enjoy your day.</>
         ) : (
           <>
-            {openCount} thing{openCount === 1 ? "" : "s"} open today. Start at the top.
+            {openCount} thing{openCount === 1 ? "" : "s"} open today. Start at
+            the top.
           </>
         )}
       </motion.p>
@@ -141,7 +157,10 @@ export default function DashboardPage() {
           </CardTitle>
           <Link
             href="/habits"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 rounded-full")}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "h-8 rounded-full",
+            )}
           >
             All habits <ArrowRight className="size-3.5" />
           </Link>
@@ -160,7 +179,9 @@ export default function DashboardPage() {
                 <HabitDashboardRow
                   habit={h}
                   done={todayLogs.has(h.id)}
-                  onToggle={() => toggleLog.mutate({ habit_id: h.id, log_date: today })}
+                  onToggle={() =>
+                    toggleLog.mutate({ habit_id: h.id, log_date: today })
+                  }
                   index={index}
                 />
               </StaggerItem>
@@ -185,7 +206,10 @@ export default function DashboardPage() {
           </CardTitle>
           <Link
             href="/tasks"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 rounded-full")}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "h-8 rounded-full",
+            )}
           >
             All tasks <ArrowRight className="size-3.5" />
           </Link>
@@ -203,7 +227,12 @@ export default function DashboardPage() {
               <StaggerItem key={t.id}>
                 <TaskDashboardRow
                   task={t}
-                  onToggle={(done) => setStatus.mutate({ id: t.id, status: done ? "done" : "todo" })}
+                  onToggle={(done) =>
+                    setStatus.mutate({
+                      id: t.id,
+                      status: done ? "done" : "todo",
+                    })
+                  }
                   index={index}
                 />
               </StaggerItem>
@@ -228,7 +257,10 @@ export default function DashboardPage() {
           </CardTitle>
           <Link
             href="/water"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 rounded-full")}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "h-8 rounded-full",
+            )}
           >
             Details <ArrowRight className="size-3.5" />
           </Link>
@@ -237,23 +269,11 @@ export default function DashboardPage() {
         <Card className="overflow-hidden">
           <CardContent className="p-4 space-y-4">
             {/* Progress Ring + Stats */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <WaterProgressRingCompact
-                totalMl={waterToday}
-                goalMl={waterGoal}
-                unit={waterUnit}
-              />
-              <div className="flex-1 space-y-1.5">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {waterDone ? "Goal reached!" : `${formatAmount(remainingMl(waterToday, waterGoal), waterUnit)} to go`}
-                  </span>
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {formatAmount(waterToday, waterUnit)} / {formatAmount(waterGoal, waterUnit)}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <WaterProgressRingCompact
+              totalMl={waterToday}
+              goalMl={waterGoal}
+              unit={waterUnit}
+            />
 
             {/* Quick Add Buttons */}
             <div className="grid grid-cols-3 gap-2">
@@ -267,8 +287,8 @@ export default function DashboardPage() {
                   whileTap={{ scale: 0.98 }}
                   className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-chart-water/10 text-sm font-semibold text-chart-water transition-colors hover:bg-chart-water/20 active:scale-[0.98] disabled:opacity-50"
                 >
-                  <Droplet className="size-4" aria-hidden />
-                  +{formatAmount(amt, waterUnit)}
+                  <PlusCircle className="size-4" />
+                  {formatAmount(amt, waterUnit)}
                 </motion.button>
               ))}
             </div>
@@ -295,13 +315,21 @@ export default function DashboardPage() {
           <CardContent className="space-y-2">
             {todayDiary ? (
               <>
-                <p className="truncate text-sm font-medium">{todayDiary.title || "Today's entry"}</p>
+                <p className="truncate text-sm font-medium">
+                  {todayDiary.title || "Today's entry"}
+                </p>
                 <p className="line-clamp-2 text-sm text-muted-foreground">
-                  {todayDiary.content.replace(/[#>*`[\]()!~\-]/g, " ").replace(/\s+/g, " ").slice(0, 120)}
+                  {todayDiary.content
+                    .replace(/[#>*`[\]()!~\-]/g, " ")
+                    .replace(/\s+/g, " ")
+                    .slice(0, 120)}
                 </p>
                 <Link
                   href="/diary"
-                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "w-full justify-center")}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "w-full justify-center",
+                  )}
                 >
                   Read entry <ArrowRight className="size-3.5" />
                 </Link>
@@ -330,7 +358,10 @@ export default function DashboardPage() {
             {notes.slice(0, 3).length === 0 ? (
               <Link
                 href="/notes?create=1"
-                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "w-full justify-center")}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "w-full justify-center",
+                )}
               >
                 Create first note <ArrowRight className="size-3.5" />
               </Link>
@@ -342,14 +373,24 @@ export default function DashboardPage() {
                     href="/notes"
                     className="flex items-center gap-3 rounded-xl px-2 py-2 transition-colors hover:bg-muted/60"
                   >
-                    <span className="mt-1 size-2 shrink-0 rounded-full bg-chart-3" aria-hidden />
-                    <span className="flex-1 truncate text-sm font-medium">{n.title || "Untitled"}</span>
-                    <span className="text-xs text-muted-foreground">{humanDate(n.updated_at, "MMM d")}</span>
+                    <span
+                      className="mt-1 size-2 shrink-0 rounded-full bg-chart-3"
+                      aria-hidden
+                    />
+                    <span className="flex-1 truncate text-sm font-medium">
+                      {n.title || "Untitled"}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {humanDate(n.updated_at, "MMM d")}
+                    </span>
                   </Link>
                 ))}
                 <Link
                   href="/notes"
-                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "w-full justify-center mt-1")}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "w-full justify-center mt-1",
+                  )}
                 >
                   All notes <ArrowRight className="size-3.5" />
                 </Link>
@@ -364,7 +405,7 @@ export default function DashboardPage() {
         onClick={() => router.push("/tasks?create=1")}
       />
     </div>
-  )
+  );
 }
 
 function HabitDashboardRow({
@@ -373,29 +414,41 @@ function HabitDashboardRow({
   onToggle,
   index,
 }: {
-  habit: { id: string; name: string; emoji: string; color: string }
-  done: boolean
-  onToggle: () => void
-  index: number
+  habit: { id: string; name: string; emoji: string; color: string };
+  done: boolean;
+  onToggle: () => void;
+  index: number;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ type: "spring", stiffness: 380, damping: 30, delay: index * 0.03 }}
+      transition={{
+        type: "spring",
+        stiffness: 380,
+        damping: 30,
+        delay: index * 0.03,
+      }}
       className="group relative flex items-center gap-3 rounded-2xl bg-card/80 p-3 border border-border/50 hover:border-primary/20 transition-colors"
     >
       <motion.span
         whileHover={{ scale: 1.15, rotate: 6 }}
         transition={{ type: "spring", stiffness: 500, damping: 25 }}
         className="grid size-10 shrink-0 place-items-center rounded-xl text-lg shadow-sm"
-        style={{ background: `oklch(from ${colorSoft(habit.color)} l c h / 0.12)` }}
+        style={{
+          background: `oklch(from ${colorSoft(habit.color)} l c h / 0.12)`,
+        }}
         aria-hidden
       >
         {habit.emoji}
       </motion.span>
       <div className="min-w-0 flex-1">
-        <p className={cn("truncate text-sm font-medium", done && "line-through text-muted-foreground")}>
+        <p
+          className={cn(
+            "truncate text-sm font-medium",
+            done && "line-through text-muted-foreground",
+          )}
+        >
           {habit.name}
         </p>
       </div>
@@ -427,7 +480,7 @@ function HabitDashboardRow({
         )}
       </AnimatePresence>
     </motion.div>
-  )
+  );
 }
 
 function TaskDashboardRow({
@@ -435,23 +488,47 @@ function TaskDashboardRow({
   onToggle,
   index,
 }: {
-  task: { id: string; title: string; due_date: string | null; priority: string }
-  onToggle: (done: boolean) => void
-  index: number
+  task: {
+    id: string;
+    title: string;
+    due_date: string | null;
+    priority: string;
+  };
+  onToggle: (done: boolean) => void;
+  index: number;
 }) {
   const PRIORITY_META = {
     low: { label: "Low", bg: "bg-muted", text: "text-muted-foreground" },
-    medium: { label: "Medium", bg: "bg-sky-100 dark:bg-sky-950", text: "text-sky-700 dark:text-sky-300" },
-    high: { label: "High", bg: "bg-amber-100 dark:bg-amber-950", text: "text-amber-800 dark:text-amber-300" },
-    urgent: { label: "Urgent", bg: "bg-red-100 dark:bg-red-950", text: "text-red-700 dark:text-red-300" },
-  }
-  const p = PRIORITY_META[task.priority as keyof typeof PRIORITY_META] || PRIORITY_META.low
+    medium: {
+      label: "Medium",
+      bg: "bg-sky-100 dark:bg-sky-950",
+      text: "text-sky-700 dark:text-sky-300",
+    },
+    high: {
+      label: "High",
+      bg: "bg-amber-100 dark:bg-amber-950",
+      text: "text-amber-800 dark:text-amber-300",
+    },
+    urgent: {
+      label: "Urgent",
+      bg: "bg-red-100 dark:bg-red-950",
+      text: "text-red-700 dark:text-red-300",
+    },
+  };
+  const p =
+    PRIORITY_META[task.priority as keyof typeof PRIORITY_META] ||
+    PRIORITY_META.low;
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ type: "spring", stiffness: 380, damping: 30, delay: index * 0.03 }}
+      transition={{
+        type: "spring",
+        stiffness: 380,
+        damping: 30,
+        delay: index * 0.03,
+      }}
       className="group relative flex items-center gap-3 rounded-2xl bg-card/80 p-3 border border-border/50 hover:border-primary/20 transition-colors"
     >
       <motion.button
@@ -467,29 +544,49 @@ function TaskDashboardRow({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{task.title}</p>
         <div className="mt-1 flex items-center gap-2">
-          <Badge variant="outline" className={cn("text-xs gap-1", p.bg, p.text)}>
+          <Badge
+            variant="outline"
+            className={cn("text-xs gap-1", p.bg, p.text)}
+          >
             <Flame className="size-2.5" /> {p.label}
           </Badge>
           {task.due_date && (
-            <span className={cn("text-xs", task.due_date.slice(0, 10) < todayISO() ? "text-destructive" : task.due_date.slice(0, 10) === todayISO() ? "text-primary" : "text-muted-foreground")}>
-              {task.due_date.slice(0, 10) === todayISO() ? "Today" : task.due_date.slice(0, 10) < todayISO() ? "Overdue" : task.due_date.slice(0, 10)}
+            <span
+              className={cn(
+                "text-xs",
+                task.due_date.slice(0, 10) < todayISO()
+                  ? "text-destructive"
+                  : task.due_date.slice(0, 10) === todayISO()
+                    ? "text-primary"
+                    : "text-muted-foreground",
+              )}
+            >
+              {task.due_date.slice(0, 10) === todayISO()
+                ? "Today"
+                : task.due_date.slice(0, 10) < todayISO()
+                  ? "Overdue"
+                  : task.due_date.slice(0, 10)}
             </span>
           )}
         </div>
       </div>
     </motion.div>
-  )
+  );
 }
 
 function WaterProgressRingCompact({
   totalMl: total,
   goalMl: goal,
   unit,
-}: { totalMl: number; goalMl: number; unit: "ml" | "oz" }) {
-  const pct = Math.min(100, Math.round((total / goal) * 100))
-  const radius = 36
-  const circumference = 2 * Math.PI * radius
-  const offset = circumference * (1 - pct / 100)
+}: {
+  totalMl: number;
+  goalMl: number;
+  unit: "ml" | "oz";
+}) {
+  const pct = Math.min(100, Math.round((total / goal) * 100));
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference * (1 - pct / 100);
 
   return (
     <div className="flex flex-col items-center sm:flex-row sm:items-center gap-4 shrink-0">
@@ -517,20 +614,28 @@ function WaterProgressRingCompact({
             cy={48}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: offset }}
-            transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.2 }}
+            transition={{
+              type: "spring",
+              stiffness: 200,
+              damping: 20,
+              delay: 0.2,
+            }}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold tabular-nums text-foreground">{pct}%</span>
+          <span className="text-lg font-bold tabular-nums text-foreground">
+            {pct}%
+          </span>
         </div>
       </div>
       <div className="text-center sm:text-left">
-        <p className="text-xs text-muted-foreground uppercase tracking-wide">Hydration</p>
+        <p className="text-xs text-muted-foreground uppercase tracking-wide">
+          Hydration
+        </p>
         <p className="text-sm font-semibold tabular-nums">
           {formatAmount(total, unit)} / {formatAmount(goal, unit)}
         </p>
       </div>
     </div>
-  )
+  );
 }
-

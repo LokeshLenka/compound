@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState, type FormEvent } from "react"
+import { useState, type FormEvent } from "react";
 import {
   Check,
   Droplet,
@@ -10,26 +10,21 @@ import {
   Trash2,
   Undo2,
   X,
-} from "lucide-react"
-import { PageHeader } from "@/components/page-header"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useWaterLogs, useWaterSettings } from "@/features/water/use-water"
-import { useAddWater } from "@/features/water/use-water"
-import { useDeleteWater } from "@/features/water/use-water"
-import { useUpdateWater } from "@/features/water/use-water"
-import { WaterProgressRing } from "@/features/water/water-progress-ring"
-import { WaterWeekChart } from "@/features/water/water-week-chart"
-import { WaterSettingsDialog } from "@/features/water/water-settings-dialog"
+} from "lucide-react";
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useWaterLogs, useWaterSettings } from "@/features/water/use-water";
+import { useAddWater } from "@/features/water/use-water";
+import { useDeleteWater } from "@/features/water/use-water";
+import { useUpdateWater } from "@/features/water/use-water";
+import { WaterProgressRing } from "@/features/water/water-progress-ring";
+import { WaterWeekChart } from "@/features/water/water-week-chart";
+import { WaterSettingsDialog } from "@/features/water/water-settings-dialog";
 import {
   bestDayMl,
   dailyTotals,
@@ -43,45 +38,45 @@ import {
   dailyAverage,
   unitToMl,
   weekTotalMl,
-} from "@/lib/water"
-import type { WaterLog, WaterUnit } from "@/lib/types"
+} from "@/lib/water";
+import type { WaterLog, WaterUnit } from "@/lib/types";
 
 /** Matches the amount_ml check constraint on water_intake_logs. */
-const MAX_ENTRY_ML = 5000
+const MAX_ENTRY_ML = 5000;
 
 export default function WaterPage() {
-  const logsQuery = useWaterLogs()
-  const settingsQuery = useWaterSettings()
-  const addWater = useAddWater()
-  const deleteWater = useDeleteWater()
-  const updateWater = useUpdateWater()
+  const logsQuery = useWaterLogs();
+  const settingsQuery = useWaterSettings();
+  const addWater = useAddWater();
+  const deleteWater = useDeleteWater();
+  const updateWater = useUpdateWater();
 
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const logs = logsQuery.data ?? []
-  const settings = settingsQuery.data
-  const unit: WaterUnit = settings?.water_unit ?? "ml"
-  const goalMl = settings?.water_goal_ml ?? 2500
-  const quickAmounts = settings?.water_quick_amounts ?? [200, 400, 800]
+  const logs = logsQuery.data ?? [];
+  const settings = settingsQuery.data;
+  const unit: WaterUnit = settings?.water_unit ?? "ml";
+  const goalMl = settings?.water_goal_ml ?? 2500;
+  const quickAmounts = settings?.water_quick_amounts ?? [200, 400, 800];
 
-  const now = new Date()
+  const now = new Date();
   const todayLogs = logs.filter((l) => {
-    const d = new Date(l.drank_at)
+    const d = new Date(l.drank_at);
     return (
       d.getFullYear() === now.getFullYear() &&
       d.getMonth() === now.getMonth() &&
       d.getDate() === now.getDate()
-    )
-  })
-  const todayMl = totalMl(todayLogs)
-  const pct = progressPct(todayMl, goalMl)
-  const rest = remainingMl(todayMl, goalMl)
-  const done = todayMl >= goalMl
-  const streak = currentStreak(logs, goalMl, now)
-  const avgMl = dailyAverage(logs, 7, now)
-  const week = dailyTotals(logs, 7, now)
-  const weekTotal = weekTotalMl(week)
-  const bestDay = bestDayMl(week)
+    );
+  });
+  const todayMl = totalMl(todayLogs);
+  const pct = progressPct(todayMl, goalMl);
+  const rest = remainingMl(todayMl, goalMl);
+  const done = todayMl >= goalMl;
+  const streak = currentStreak(logs, goalMl, now);
+  const avgMl = dailyAverage(logs, 7, now);
+  const week = dailyTotals(logs, 7, now);
+  const weekTotal = weekTotalMl(week);
+  const bestDay = bestDayMl(week);
 
   return (
     <div className="grid gap-5">
@@ -104,27 +99,12 @@ export default function WaterPage() {
             {logsQuery.isLoading ? (
               <Skeleton className="size-48 rounded-full" />
             ) : (
-              <WaterProgressRing totalMl={todayMl} goalMl={goalMl} unit={unit} />
-            )}
-
-            <div className="grid w-full gap-2">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Daily progress</p>
-                <p className="text-sm text-muted-foreground tabular-nums">
-                  {pct}%
-                </p>
-              </div>
-              <Progress
-                value={pct}
-                aria-label={`Daily progress ${pct} percent`}
-                className="[&_[data-slot=progress-indicator]]:bg-chart-water"
+              <WaterProgressRing
+                totalMl={todayMl}
+                goalMl={goalMl}
+                unit={unit}
               />
-              <p className="text-center text-xs text-muted-foreground">
-                {done
-                  ? "Daily goal reached"
-                  : `${formatAmount(rest, unit)} to go · ${formatAmount(todayMl, unit)} of ${formatAmount(goalMl, unit)}`}
-              </p>
-            </div>
+            )}
 
             <div className="grid w-full grid-cols-3 gap-2">
               {quickAmounts.map((amt) => (
@@ -193,16 +173,14 @@ export default function WaterPage() {
             <CardTitle>This week</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-5">
-            <WaterWeekChart
-              logs={logs}
-              goalMl={goalMl}
-              unit={unit}
-              now={now}
-            />
+            <WaterWeekChart logs={logs} goalMl={goalMl} unit={unit} now={now} />
 
             <div className="grid grid-cols-3 gap-x-2 gap-y-3 text-center">
               <WeekStat label="7-day avg" value={formatAmount(avgMl, unit)} />
-              <WeekStat label="Week total" value={formatAmount(weekTotal, unit)} />
+              <WeekStat
+                label="Week total"
+                value={formatAmount(weekTotal, unit)}
+              />
               <WeekStat label="Best day" value={formatAmount(bestDay, unit)} />
               <WeekStat label="Streak" value={`${streak}d`} />
               <WeekStat label="Today" value={formatAmount(todayMl, unit)} />
@@ -214,7 +192,7 @@ export default function WaterPage() {
 
       <WaterSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
-  )
+  );
 }
 
 function WeekStat({ label, value }: { label: string; value: string }) {
@@ -223,7 +201,7 @@ function WeekStat({ label, value }: { label: string; value: string }) {
       <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
       <p className="text-sm font-semibold tabular-nums">{value}</p>
     </div>
-  )
+  );
 }
 
 function CustomAmountForm({
@@ -231,28 +209,30 @@ function CustomAmountForm({
   pending,
   onAdd,
 }: {
-  unit: WaterUnit
-  pending: boolean
-  onAdd: (ml: number) => void
+  unit: WaterUnit;
+  pending: boolean;
+  onAdd: (ml: number) => void;
 }) {
-  const [raw, setRaw] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const [raw, setRaw] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   function submit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const parsed = Number(raw)
+    e.preventDefault();
+    const parsed = Number(raw);
     if (raw.trim() === "" || !Number.isFinite(parsed) || parsed <= 0) {
-      setError(`Enter an amount greater than 0 ${unit}.`)
-      return
+      setError(`Enter an amount greater than 0 ${unit}.`);
+      return;
     }
-    const ml = unitToMl(parsed, unit)
+    const ml = unitToMl(parsed, unit);
     if (ml > MAX_ENTRY_ML) {
-      setError(`Single entries are capped at ${formatAmount(MAX_ENTRY_ML, unit)}.`)
-      return
+      setError(
+        `Single entries are capped at ${formatAmount(MAX_ENTRY_ML, unit)}.`,
+      );
+      return;
     }
-    onAdd(ml)
-    setRaw("")
-    setError(null)
+    onAdd(ml);
+    setRaw("");
+    setError(null);
   }
 
   return (
@@ -287,7 +267,7 @@ function CustomAmountForm({
         </p>
       )}
     </form>
-  )
+  );
 }
 
 function WaterLogRow({
@@ -297,37 +277,39 @@ function WaterLogRow({
   onSave,
   onDelete,
 }: {
-  log: WaterLog
-  unit: WaterUnit
-  saving: boolean
-  onSave: (amountMl: number) => void
-  onDelete: () => void
+  log: WaterLog;
+  unit: WaterUnit;
+  saving: boolean;
+  onSave: (amountMl: number) => void;
+  onDelete: () => void;
 }) {
-  const [editing, setEditing] = useState(false)
-  const [raw, setRaw] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false);
+  const [raw, setRaw] = useState("");
+  const [error, setError] = useState<string | null>(null);
   // Optimistic rows carry a client-side id that doesn't exist server-side yet.
-  const isOptimistic = log.id.startsWith("optimistic-")
+  const isOptimistic = log.id.startsWith("optimistic-");
 
   function beginEdit() {
-    setRaw(String(mlToUnit(log.amount_ml, unit)))
-    setError(null)
-    setEditing(true)
+    setRaw(String(mlToUnit(log.amount_ml, unit)));
+    setError(null);
+    setEditing(true);
   }
 
   function commit() {
-    const parsed = Number(raw)
+    const parsed = Number(raw);
     if (raw.trim() === "" || !Number.isFinite(parsed) || parsed <= 0) {
-      setError("Enter an amount greater than 0.")
-      return
+      setError("Enter an amount greater than 0.");
+      return;
     }
-    const ml = unitToMl(parsed, unit)
+    const ml = unitToMl(parsed, unit);
     if (ml > MAX_ENTRY_ML) {
-      setError(`Single entries are capped at ${formatAmount(MAX_ENTRY_ML, unit)}.`)
-      return
+      setError(
+        `Single entries are capped at ${formatAmount(MAX_ENTRY_ML, unit)}.`,
+      );
+      return;
     }
-    onSave(ml)
-    setEditing(false)
+    onSave(ml);
+    setEditing(false);
   }
 
   if (editing) {
@@ -343,8 +325,8 @@ function WaterLogRow({
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") commit()
-              if (e.key === "Escape") setEditing(false)
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") setEditing(false);
             }}
             className="h-8 tabular-nums"
             autoFocus
@@ -370,7 +352,7 @@ function WaterLogRow({
         </div>
         {error && <p className="text-xs text-destructive">{error}</p>}
       </div>
-    )
+    );
   }
 
   return (
@@ -380,13 +362,22 @@ function WaterLogRow({
           <Droplet className="size-4" />
         </span>
         <div>
-          <p className="text-sm font-medium tabular-nums">{formatAmount(log.amount_ml, unit)}</p>
-          <p className="text-xs text-muted-foreground">{formatClock(log.drank_at)}</p>
+          <p className="text-sm font-medium tabular-nums">
+            {formatAmount(log.amount_ml, unit)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {formatClock(log.drank_at)}
+          </p>
         </div>
       </div>
       <div className="flex items-center">
         {!isOptimistic && (
-          <Button variant="ghost" size="sm" onClick={beginEdit} aria-label="Edit entry">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={beginEdit}
+            aria-label="Edit entry"
+          >
             <Pencil className="size-4" />
           </Button>
         )}
@@ -400,5 +391,5 @@ function WaterLogRow({
         </Button>
       </div>
     </div>
-  )
+  );
 }
