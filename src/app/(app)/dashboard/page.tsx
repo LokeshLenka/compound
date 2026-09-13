@@ -531,16 +531,14 @@ function TaskDashboardRow({
       }}
       className="group relative flex items-center gap-3 rounded-2xl bg-card/80 p-3 border border-border/50 hover:border-primary/20 transition-colors"
     >
-      <motion.button
-        type="button"
-        onClick={() => onToggle(true)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        className="shrink-0 size-10 rounded-full border-2 border-primary/30 bg-transparent flex items-center justify-center transition-colors hover:bg-primary/5 hover:border-primary"
-        aria-label={`Mark ${task.title} as done`}
+      <motion.span
+        whileHover={{ scale: 1.15, rotate: 6 }}
+        transition={{ type: "spring", stiffness: 500, damping: 25 }}
+        className="grid size-10 shrink-0 place-items-center rounded-xl text-lg shadow-sm"
+        aria-hidden
       >
-        <CheckCircle2 className="size-4.5 text-primary" />
-      </motion.button>
+        🎯
+      </motion.span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{task.title}</p>
         <div className="mt-1 flex items-center gap-2">
@@ -570,6 +568,16 @@ function TaskDashboardRow({
           )}
         </div>
       </div>
+      <motion.button
+        type="button"
+        onClick={() => onToggle(true)}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        className="shrink-0 size-10 rounded-full border-2 border-primary/30 bg-transparent flex items-center justify-center transition-colors hover:bg-primary/5 hover:border-primary"
+        aria-label={`Mark ${task.title} as done`}
+      >
+        <CheckCircle2 className="size-4.5 text-primary" />
+      </motion.button>
     </motion.div>
   );
 }
