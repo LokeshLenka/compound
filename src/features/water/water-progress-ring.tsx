@@ -14,7 +14,7 @@ export function WaterProgressRing({
   className?: string
 }) {
   const pct = goalMl > 0 ? Math.min(100, (totalMl / goalMl) * 100) : 0
-  const radius = 64
+  const radius = 72
   const circumference = 2 * Math.PI * radius
   const dash = (pct / 100) * circumference
   const done = totalMl >= goalMl
