@@ -92,9 +92,6 @@ export default function WaterPage() {
 
       <div className="grid items-stretch gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Today</CardTitle>
-          </CardHeader>
           <CardContent className="flex flex-col items-center gap-6">
             {logsQuery.isLoading ? (
               <Skeleton className="size-48 rounded-full" />
@@ -170,7 +167,7 @@ export default function WaterPage() {
 
         <Card className="flex flex-col">
           <CardHeader>
-            <CardTitle>This week</CardTitle>
+            <CardTitle className="text-center">This week</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-5">
             <WaterWeekChart logs={logs} goalMl={goalMl} unit={unit} now={now} />

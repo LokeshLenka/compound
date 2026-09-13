@@ -167,14 +167,33 @@ export function TaskRow({
 
       {/* Desktop layout */}
       <div className="hidden items-start gap-3 p-3 md:flex">
-        <Checkbox
-          checked={done}
-          onCheckedChange={(checked) =>
-            setStatus.mutate({ id: task.id, status: checked ? "done" : "todo" })
-          }
-          aria-label={`Mark ${task.title} as done`}
-          className="mt-0.5"
-        />
+        <AnimatePresence mode="wait">
+          {done ? (
+            <motion.div
+              key="done"
+              initial={{ scale: 0, rotate: -45 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, rotate: 45, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              className="flex items-center gap-1 rounded-full bg-chart-1/12 text-chart-1 px-2 py-0.5 text-xs font-semibold"
+            >
+              <CheckCircle2 className="size-3.5" />
+              Done
+            </motion.div>
+          ) : (
+            <motion.button
+              key="check"
+              type="button"
+              onClick={() => setStatus.mutate({ id: task.id, status: "done" })}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="shrink-0 size-10 rounded-full border-2 border-primary/30 bg-transparent flex items-center justify-center transition-colors hover:bg-primary/5 hover:border-primary"
+              aria-label={`Mark ${task.title} as done`}
+            >
+              <CheckCircle2 className="size-4.5 text-primary" />
+            </motion.button>
+          )}
+        </AnimatePresence>
         <div className="min-w-0 flex-1">
           <button
             type="button"
