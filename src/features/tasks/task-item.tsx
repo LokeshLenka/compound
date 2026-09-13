@@ -107,7 +107,7 @@ export function TaskRow({
         <Button
           variant="ghost"
           size="icon"
-          className="size-7"
+          className="size-9"
           aria-label={`Edit ${task.title}`}
           onClick={() => onEdit(task)}
         >
@@ -116,7 +116,7 @@ export function TaskRow({
         <Button
           variant="ghost"
           size="icon"
-          className="size-7"
+          className="size-9"
           aria-label={`Delete ${task.title}`}
           onClick={() => deleteTask.mutate(task.id)}
         >

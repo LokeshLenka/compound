@@ -39,7 +39,7 @@ export function InstallPrompt() {
 
   return (
     <div className="fixed bottom-20 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border bg-card px-4 py-3 shadow-lg md:bottom-4">
-      <p className="text-sm font-medium">Install Personal Hub for offline use</p>
+      <p className="text-sm font-medium">Install Compound for offline use</p>
       <Button size="sm" onClick={install}>
         <Download className="mr-1 size-3.5" />
         Install

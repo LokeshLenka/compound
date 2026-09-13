@@ -205,7 +205,7 @@ function NotesPageContent() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-7"
+                      className="size-9"
                       aria-label={n.is_pinned ? "Unpin" : "Pin"}
                       onClick={(e) => {
                         e.stopPropagation()

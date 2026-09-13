@@ -2,11 +2,12 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowRight,
-  BookOpen,
-  CheckCircle2,
+  Droplet,
   FileText,
+  ListChecks,
   PenLine,
   Repeat,
 } from "lucide-react"
@@ -14,8 +15,10 @@ import { useHabits, useHabitLogs, useToggleLog } from "@/features/habits/use-hab
 import { useTasks, useSetTaskStatus } from "@/features/tasks/use-tasks"
 import { useNotes } from "@/features/notes/use-notes"
 import { useDiaryEntries } from "@/features/diary/use-diary"
+import { useWaterLogs, useWaterSettings, useAddWater } from "@/features/water/use-water"
 import { isDueToday } from "@/lib/habits"
 import { todayISO, humanDate } from "@/lib/dates"
+import { totalMl, formatAmount } from "@/lib/water"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { PageHeader } from "@/components/page-header"
@@ -23,14 +26,26 @@ import { QuickAdd } from "@/components/quick-add"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 
+function greeting(now = new Date()): string {
+  const h = now.getHours()
+  if (h < 5) return "Up late"
+  if (h < 12) return "Good morning"
+  if (h < 18) return "Good afternoon"
+  return "Good evening"
+}
+
 export default function DashboardPage() {
+  const router = useRouter()
   const { data: habits } = useHabits()
   const { data: allLogs } = useHabitLogs()
   const { data: tasks } = useTasks()
   const { data: notes } = useNotes()
   const { data: diary } = useDiaryEntries()
+  const { data: waterLogs } = useWaterLogs()
+  const { data: waterSettings } = useWaterSettings()
   const toggleLog = useToggleLog()
   const setStatus = useSetTaskStatus()
+  const addWater = useAddWater()
 
   const today = todayISO()
 
@@ -38,6 +53,7 @@ export default function DashboardPage() {
   const todayLogs = new Set(
     allLogs?.filter((l) => l.log_date === today).map((l) => l.habit_id) ?? [],
   )
+  const openHabits = dueHabits.filter((h) => !todayLogs.has(h.id))
 
   const dueTasks = (tasks ?? [])
     .filter((t) => t.status !== "done" && t.status !== "archived")
@@ -46,15 +62,27 @@ export default function DashboardPage() {
       const db = b.due_date ?? "9999-12-31"
       return da < db ? -1 : da > db ? 1 : 0
     })
-    .slice(0, 6)
 
   const todayDiary = diary?.find((e) => e.entry_date === today)
-
-  const doneToday = (tasks ?? []).filter(
-    (t) => t.completed_at && t.completed_at.slice(0, 10) === today,
-  ).length
-  const checkinsToday = dueHabits.filter((h) => todayLogs.has(h.id)).length
   const recentNotes = (notes ?? []).slice(0, 3)
+
+  const waterUnit = waterSettings?.water_unit ?? "ml"
+  const waterGoal = waterSettings?.water_goal_ml ?? 2500
+  const waterPresets = (waterSettings?.water_quick_amounts ?? [200, 400, 800]).slice(0, 3)
+  const now = new Date()
+  const waterToday = totalMl(
+    (waterLogs ?? []).filter((l) => {
+      const d = new Date(l.drank_at)
+      return (
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate()
+      )
+    }),
+  )
+  const waterDone = waterToday >= waterGoal
+
+  const openCount = openHabits.length + dueTasks.length + (todayDiary ? 0 : 1) + (waterDone ? 0 : 1)
 
   // Installed-app badge: today's open items (best-effort, no-op unsupported)
   useEffect(() => {
@@ -63,59 +91,58 @@ export default function DashboardPage() {
         setAppBadge?: (n: number) => Promise<void>
         clearAppBadge?: () => Promise<void>
       }
-      const open = dueHabits.length - checkinsToday + dueTasks.length
-      if (open > 0) void nav.setAppBadge?.(open)
+      if (openCount > 0) void nav.setAppBadge?.(openCount)
       else void nav.clearAppBadge?.()
     } catch {
       /* badge unsupported — ignore */
     }
-  }, [dueHabits.length, checkinsToday, dueTasks.length])
+  }, [openCount])
+
+  const createActions = [
+    { icon: Repeat, label: "New habit", href: "/habits?create=1", tint: "bg-chart-1/12 text-chart-1" },
+    { icon: ListChecks, label: "New task", href: "/tasks?create=1", tint: "bg-chart-2/12 text-chart-2" },
+    { icon: FileText, label: "New note", href: "/notes?create=1", tint: "bg-chart-3/12 text-chart-3" },
+  ]
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        title="Dashboard"
-        actions={<QuickAdd />}
-      />
+      <PageHeader title="Dashboard" actions={<QuickAdd />} />
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          icon={<Repeat className="size-4" />}
-          label="Habit check-ins"
-          value={`${checkinsToday}/${dueHabits.length}`}
-          href="/habits"
-          tint="habits"
-        />
-        <StatCard
-          icon={<CheckCircle2 className="size-4" />}
-          label="Tasks done today"
-          value={String(doneToday)}
-          href="/tasks"
-          tint="tasks"
-        />
-        <StatCard
-          icon={<FileText className="size-4" />}
-          label="Notes"
-          value={String(notes?.length ?? 0)}
-          href="/notes"
-          tint="notes"
-        />
-        <StatCard
-          icon={<BookOpen className="size-4" />}
-          label={todayDiary ? "Diary written" : "Diary pending"}
-          value={todayDiary ? "Done" : "—"}
-          href="/diary"
-          tint="diary"
-        />
+      <p className="text-balance text-sm leading-relaxed text-muted-foreground">
+        {greeting(now)}, {humanDate(today, "EEEE, MMMM d")} —{" "}
+        {openCount === 0 ? (
+          <>everything is done. Enjoy your day.</>
+        ) : (
+          <>
+            {openCount} thing{openCount === 1 ? "" : "s"} open today. Start at the top.
+          </>
+        )}
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {createActions.map((a) => (
+          <button
+            key={a.href}
+            type="button"
+            onClick={() => router.push(a.href)}
+            className="group flex items-center gap-3 rounded-3xl border border-border/50 bg-card p-4 text-left card-shadow transition-colors hover:border-primary/50 active:scale-[0.98]"
+          >
+            <span className={cn("grid size-10 shrink-0 place-items-center rounded-full", a.tint)}>
+              <a.icon className="size-4" aria-hidden />
+            </span>
+            <span className="text-sm font-semibold">{a.label}</span>
+            <ArrowRight className="ml-auto size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" aria-hidden />
+          </button>
+        ))}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid items-start gap-5 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-base">Today’s habits</CardTitle>
+            <CardTitle className="text-base">Habits to check off</CardTitle>
             <Link
               href="/habits"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
             >
               All habits <ArrowRight className="size-3.5" />
             </Link>
@@ -158,10 +185,10 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-base">Due tasks</CardTitle>
+            <CardTitle className="text-base">Tasks to clear</CardTitle>
             <Link
               href="/tasks"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
             >
               All tasks <ArrowRight className="size-3.5" />
             </Link>
@@ -172,7 +199,7 @@ export default function DashboardPage() {
                 All clear. Add a task to stay ahead.
               </p>
             ) : (
-              dueTasks.map((t) => (
+              dueTasks.slice(0, 6).map((t) => (
                 <div
                   key={t.id}
                   className="flex items-center gap-2.5 rounded-2xl px-2 py-2 transition-colors hover:bg-muted/60"
@@ -204,12 +231,45 @@ export default function DashboardPage() {
 
         <Card>
           <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-base">Water right now</CardTitle>
+            <Link
+              href="/water"
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
+            >
+              Details <ArrowRight className="size-3.5" />
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground tabular-nums">
+                {formatAmount(waterToday, waterUnit)}
+              </span>{" "}
+              of {formatAmount(waterGoal, waterUnit)} today
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {waterPresets.map((amt) => (
+                <button
+                  key={amt}
+                  type="button"
+                  disabled={addWater.isPending}
+                  onClick={() => addWater.mutate({ amount_ml: amt })}
+                  className="inline-flex h-11 items-center justify-center gap-1 rounded-full bg-chart-water/15 text-sm font-semibold text-chart-water transition-colors hover:bg-chart-water/25 active:scale-95 disabled:opacity-50"
+                >
+                  <Droplet className="size-3.5" aria-hidden />+{formatAmount(amt, waterUnit)}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-base">Diary</CardTitle>
             <Link
               href="/diary"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
             >
-              {todayDiary ? "Read entry" : "Write entry"}{" "}
+              {todayDiary ? "Read entry" : "Open diary"}{" "}
               <ArrowRight className="size-3.5" />
             </Link>
           </CardHeader>
@@ -234,12 +294,12 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-base">Recent notes</CardTitle>
             <Link
               href="/notes"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-7 rounded-full")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-9 rounded-full md:h-7")}
             >
               All notes <ArrowRight className="size-3.5" />
             </Link>
@@ -270,44 +330,5 @@ export default function DashboardPage() {
         </Card>
       </div>
     </div>
-  )
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  href,
-  tint,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: string
-  href: string
-  tint: "habits" | "tasks" | "notes" | "diary"
-}) {
-  const chips: Record<string, string> = {
-    habits: "bg-chart-1/12 text-chart-1",
-    tasks: "bg-chart-2/12 text-chart-2",
-    notes: "bg-chart-3/12 text-chart-3",
-    diary: "bg-chart-4/12 text-chart-4",
-  }
-  return (
-    <Link
-      href={href}
-      className="group/card rounded-3xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-    >
-      <Card className="h-full rounded-3xl transition-colors duration-200 group-hover/card:border-primary/40">
-        <CardContent className="flex items-center gap-3 p-4">
-          <span className={cn("grid size-10 shrink-0 place-items-center rounded-full", chips[tint])}>
-            {icon}
-          </span>
-          <div className="min-w-0">
-            <p className="text-2xl font-bold leading-none tracking-tight tabular-nums">{value}</p>
-            <p className="mt-1 truncate text-xs font-medium text-muted-foreground">{label}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
   )
 }

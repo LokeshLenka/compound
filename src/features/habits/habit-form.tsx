@@ -218,7 +218,7 @@ export function HabitFormDialog({
               <Label htmlFor="habit-times">Times per week</Label>
               <select
                 id="habit-times"
-                className="w-full rounded-full border bg-transparent px-3 py-2 text-sm"
+                className="w-full rounded-full border bg-transparent px-3 py-2 text-base md:text-sm"
                 {...register("times")}
               >
                 {[1, 2, 3, 4, 5, 6, 7].map((n) => (

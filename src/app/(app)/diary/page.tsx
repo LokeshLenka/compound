@@ -142,7 +142,7 @@ export default function DiaryPage() {
                   }}
                   title={m.label}
                   className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-full border px-2 py-1 text-lg transition",
+                    "flex flex-col items-center gap-0.5 rounded-full border px-3 py-1.5 text-lg transition",
                     mood === m.value
                       ? "border-primary bg-accent"
                       : "border-transparent hover:bg-accent/60",

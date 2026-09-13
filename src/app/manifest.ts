@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next"
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Personal Hub",
-    short_name: "Hub",
+    name: "Compound",
+    short_name: "Compound",
     description: "Habits, tasks, notes and diary in one private place.",
     start_url: "/dashboard",
     display: "standalone",
