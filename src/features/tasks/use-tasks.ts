@@ -3,12 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import type { Project, Task, TaskStatus } from "@/lib/types"
+import type { Task, TaskStatus } from "@/lib/types"
 import type { TaskFormValues } from "@/lib/schemas"
 
 export const tasksKeys = {
   all: ["tasks"] as const,
-  projects: ["projects"] as const,
 }
 
 export function useTasks() {
@@ -27,24 +26,10 @@ export function useTasks() {
   })
 }
 
-export function useProjects() {
-  return useQuery({
-    queryKey: tasksKeys.projects,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb.from("projects").select("*").order("name")
-      if (error) throw error
-      return (data ?? []) as Project[]
-    },
-  })
-}
-
 export function useCreateTask() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (
-      values: TaskFormValues & { due_date: string | null; project_id: string | null },
-    ) => {
+    mutationFn: async (values: TaskFormValues & { due_date: string | null }) => {
       const sb = getSupabaseBrowserClient()
       const { error } = await sb.from("tasks").insert({
         title: values.title,
@@ -52,7 +37,6 @@ export function useCreateTask() {
         priority: values.priority,
         status: values.status,
         due_date: values.due_date,
-        project_id: values.project_id,
         tags: values.tags,
       })
       if (error) throw error
@@ -74,7 +58,7 @@ export function useUpdateTask() {
     }: {
       id: string
       patch: Partial<Pick<TaskFormValues, "title" | "notes" | "priority" | "status">> &
-        Partial<Pick<Task, "due_date" | "project_id" | "tags" | "title">>
+        Partial<Pick<Task, "due_date" | "tags" | "title">>
     }) => {
       const sb = getSupabaseBrowserClient()
       const { error } = await sb.from("tasks").update(patch).eq("id", id)
@@ -139,19 +123,6 @@ export function useDeleteTask() {
       qc.invalidateQueries({ queryKey: tasksKeys.all })
       toast.success("Task deleted")
     },
-    onError: (e: Error) => toast.error(e.message),
-  })
-}
-
-export function useCreateProject() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: async (name: string) => {
-      const sb = getSupabaseBrowserClient()
-      const { error } = await sb.from("projects").insert({ name })
-      if (error) throw error
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: tasksKeys.projects }),
     onError: (e: Error) => toast.error(e.message),
   })
 }

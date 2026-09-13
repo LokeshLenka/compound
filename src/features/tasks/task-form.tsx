@@ -4,8 +4,8 @@ import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { taskSchema, splitTags, type TaskFormValues } from "@/lib/schemas"
-import type { Project, Task } from "@/lib/types"
-import { useCreateTask, useProjects, useUpdateTask } from "@/features/tasks/use-tasks"
+import type { Task } from "@/lib/types"
+import { useCreateTask, useUpdateTask } from "@/features/tasks/use-tasks"
 import { PRIORITY_META } from "@/features/tasks/meta"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,7 +39,6 @@ export function TaskFormDialog({
 }) {
   const createTask = useCreateTask()
   const updateTask = useUpdateTask()
-  const { data: projects } = useProjects()
   const isEdit = Boolean(task)
 
   const {
@@ -57,7 +56,6 @@ export function TaskFormDialog({
       priority: "medium",
       status: "todo",
       due_date: null,
-      project_id: null,
       tags: [],
     },
   })
@@ -74,7 +72,6 @@ export function TaskFormDialog({
               priority: task.priority,
               status: task.status,
               due_date: task.due_date ? task.due_date.slice(0, 10) : null,
-              project_id: task.project_id,
               tags: task.tags,
             }
           : {
@@ -83,7 +80,6 @@ export function TaskFormDialog({
               priority: "medium",
               status: defaultStatus ?? "todo",
               due_date: null,
-              project_id: null,
               tags: [],
             },
       )
@@ -93,7 +89,6 @@ export function TaskFormDialog({
 
   const priority = watch("priority")
   const status = watch("status")
-  const projectId = watch("project_id")
 
   async function onSubmit(values: TaskFormValues) {
     const tags = splitTags(tagsInput)
@@ -101,7 +96,6 @@ export function TaskFormDialog({
       ...values,
       tags,
       due_date: values.due_date || null,
-      project_id: values.project_id || null,
     }
     if (isEdit && task) {
       await updateTask.mutateAsync({ id: task.id, patch: payload as TaskFormValues })
@@ -174,33 +168,13 @@ export function TaskFormDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="task-due">Due date</Label>
-              <Input
-                id="task-due"
-                type="date"
-                {...register("due_date")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Project</Label>
-              <Select
-                value={projectId ?? undefined}
-                onValueChange={(v) => setValue("project_id", v || null, { shouldDirty: true })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="None" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects?.map((p: Project) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="task-due">Due date</Label>
+            <Input
+              id="task-due"
+              type="date"
+              {...register("due_date")}
+            />
           </div>
 
           <div className="space-y-2">

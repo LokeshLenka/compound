@@ -34,7 +34,6 @@ export type TaskPriority = "low" | "medium" | "high" | "urgent"
 export interface Task {
   id: string
   user_id: string
-  project_id: string | null
   title: string
   notes: string | null
   priority: TaskPriority
@@ -43,15 +42,6 @@ export interface Task {
   tags: string[]
   completed_at: string | null
   sort_order: number
-  created_at: string
-  updated_at: string
-}
-
-export interface Project {
-  id: string
-  user_id: string
-  name: string
-  color: string
   created_at: string
   updated_at: string
 }

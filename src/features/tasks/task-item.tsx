@@ -58,14 +58,12 @@ const STATUS_ICONS: Record<TaskStatus, typeof Circle> = {
 
 export function TaskRow({
   task,
-  projectName,
   onEdit,
   compact,
   highlighted,
   rowId,
 }: {
   task: Task
-  projectName: (id: string | null) => string | undefined
   onEdit: (task: Task) => void
   compact?: boolean
   highlighted?: boolean
@@ -128,11 +126,6 @@ export function TaskRow({
               )}
             />
             <MobileDueLabel task={task} />
-            {projectName(task.project_id) && (
-              <span className="truncate text-[10px] text-muted-foreground">
-                · {projectName(task.project_id)}
-              </span>
-            )}
           </div>
         </button>
 
@@ -206,11 +199,6 @@ export function TaskRow({
               {STATUS_META[task.status].label}
             </Badge>
             <DueBadge task={task} />
-            {projectName(task.project_id) && (
-              <Badge variant="outline" className="text-xs">
-                {projectName(task.project_id)}
-              </Badge>
-            )}
             {task.tags.map((t) => (
               <span key={t} className="text-xs text-muted-foreground">
                 #{t}

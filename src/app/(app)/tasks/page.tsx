@@ -9,18 +9,16 @@ import {
   Columns3,
   ListChecks,
   SlidersHorizontal,
-  X,
 } from "lucide-react"
 import {
   useTasks,
-  useProjects,
   useSetTaskStatus,
 } from "@/features/tasks/use-tasks"
 import { TaskRow } from "@/features/tasks/task-item"
 import { TaskFormDialog } from "@/features/tasks/task-form"
 import { STATUS_ORDER, STATUS_META } from "@/features/tasks/meta"
 import { CreateFab } from "@/components/create-fab"
-import type { Project, Task, TaskStatus } from "@/lib/types"
+import type { Task, TaskStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/page-header"
@@ -64,13 +62,11 @@ export default function TasksPage() {
 function TasksPageContent() {
   const searchParams = useSearchParams()
   const { data: tasks, isLoading } = useTasks()
-  const { data: projects } = useProjects()
   const setStatus = useSetTaskStatus()
 
   const [view, setView] = useState<"list" | "board">("list")
   const [filter, setFilter] = useState<Filter>("all")
   const [priority, setPriority] = useState<string>("all")
-  const [projectId, setProjectId] = useState<string>("all")
   const [query, setQuery] = useState(searchParams.get("q") ?? "")
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
@@ -91,17 +87,10 @@ function TasksPageContent() {
     }
   }, [searchParams])
 
-  const projectNames = useMemo(() => {
-    const m = new Map<string, string>()
-    for (const p of projects ?? []) m.set(p.id, p.name)
-    return m
-  }, [projects])
-
   const visible = useMemo(() => {
     let list = tasks ?? []
     if (filter !== "all") list = list.filter((t) => t.status === filter)
     if (priority !== "all") list = list.filter((t) => t.priority === priority)
-    if (projectId !== "all") list = list.filter((t) => t.project_id === projectId)
     if (query.trim()) {
       const q = query.toLowerCase()
       list = list.filter(
@@ -116,7 +105,7 @@ function TasksPageContent() {
         STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) ||
         Number(Boolean(a.due_date)) - Number(Boolean(b.due_date)),
     )
-  }, [tasks, filter, priority, projectId, query])
+  }, [tasks, filter, priority, query])
 
   const grouped = useMemo(() => {
     const g = new Map<TaskStatus, Task[]>()
@@ -143,6 +132,8 @@ function TasksPageContent() {
         ?.scrollIntoView({ behavior: "smooth", block: "center" })
     })
   }, [firstMatchId])
+
+  const hasActiveFilters = filter !== "all" || priority !== "all"
 
   return (
     <div className="space-y-5">
@@ -200,21 +191,6 @@ function TasksPageContent() {
           </SelectContent>
         </Select>
 
-        <Select value={projectId} onValueChange={(v) => setProjectId(v ?? "all")}>
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="Project" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All projects</SelectItem>
-            <SelectItem value="none">No project</SelectItem>
-            {projects?.map((p: Project) => (
-              <SelectItem key={p.id} value={p.id}>
-                {p.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         <div className="ml-auto flex gap-1 rounded-full border p-1">
           <Button
             variant={view === "list" ? "secondary" : "ghost"}
@@ -252,9 +228,9 @@ function TasksPageContent() {
             render={
               <Button variant="outline" size="sm" className="h-9 shrink-0 gap-1.5 px-2.5">
                 <SlidersHorizontal className="size-3.5" />
-                {(filter !== "all" || priority !== "all" || projectId !== "all") && (
+                {hasActiveFilters && (
                   <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
-                    {[filter !== "all", priority !== "all", projectId !== "all"].filter(Boolean).length}
+                    {[filter !== "all", priority !== "all"].filter(Boolean).length}
                   </span>
                 )}
               </Button>
@@ -264,12 +240,12 @@ function TasksPageContent() {
           <PopoverContent align="end" side="bottom" sideOffset={4} className="w-64">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground">Status</span>
-                {(filter !== "all" || priority !== "all" || projectId !== "all") && (
+                <span className="text-xs font-medium text-muted-foreground">Filters</span>
+                {hasActiveFilters && (
                   <button
                     type="button"
                     className="text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => { setFilter("all"); setPriority("all"); setProjectId("all") }}
+                    onClick={() => { setFilter("all"); setPriority("all") }}
                   >
                     Clear all
                   </button>
@@ -305,24 +281,6 @@ function TasksPageContent() {
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
                     <SelectItem value="urgent">Urgent</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Project</span>
-                <Select value={projectId} onValueChange={(v) => setProjectId(v ?? "all")}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="All projects" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All projects</SelectItem>
-                    <SelectItem value="none">No project</SelectItem>
-                    {projects?.map((p: Project) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -387,7 +345,6 @@ function TasksPageContent() {
               task={t}
               rowId={`task-${t.id}`}
               highlighted={t.id === firstMatchId}
-              projectName={(id) => (id ? projectNames.get(id) : undefined)}
               onEdit={(task) => {
                 setEditing(task)
                 setFormOpen(true)
@@ -437,7 +394,6 @@ function TasksPageContent() {
                       compact
                       rowId={`task-${t.id}`}
                       highlighted={t.id === firstMatchId}
-                      projectName={(id) => (id ? projectNames.get(id) : undefined)}
                       onEdit={(task) => {
                         setEditing(task)
                         setFormOpen(true)
