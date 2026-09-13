@@ -2,27 +2,27 @@ import type { TaskPriority, TaskStatus } from "@/lib/types"
 
 export const PRIORITY_META: Record<
   TaskPriority,
-  { label: string; classes: string }
+  { label: string; classes: string; bg: string }
 > = {
   low: {
     label: "Low",
-    classes:
-      "bg-muted text-muted-foreground",
+    classes: "bg-muted text-muted-foreground",
+    bg: "bg-muted-foreground/40",
   },
   medium: {
     label: "Medium",
-    classes:
-      "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+    classes: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+    bg: "bg-sky-500",
   },
   high: {
     label: "High",
-    classes:
-      "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+    classes: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300",
+    bg: "bg-amber-500",
   },
   urgent: {
     label: "Urgent",
-    classes:
-      "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+    classes: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+    bg: "bg-red-500",
   },
 }
 
