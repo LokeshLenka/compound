@@ -17,6 +17,7 @@ import {
 import { TaskRow } from "@/features/tasks/task-item"
 import { TaskFormDialog } from "@/features/tasks/task-form"
 import { STATUS_ORDER, STATUS_META } from "@/features/tasks/meta"
+import { StaggerGrid, StaggerItem } from "@/components/stagger-grid"
 import { CreateFab } from "@/components/create-fab"
 import type { Task, TaskStatus } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -335,23 +336,24 @@ function TasksPageContent() {
           </CardContent>
         </Card>
       ) : view === "list" ? (
-        <div className="space-y-2">
+        <StaggerGrid className="space-y-2">
           <p className="px-2 text-xs font-medium text-muted-foreground">
             {visible.length} tasks · {filter}
           </p>
           {visible.map((t) => (
-            <TaskRow
-              key={t.id}
-              task={t}
-              rowId={`task-${t.id}`}
-              highlighted={t.id === firstMatchId}
-              onEdit={(task) => {
-                setEditing(task)
-                setFormOpen(true)
-              }}
-            />
+            <StaggerItem key={t.id}>
+              <TaskRow
+                task={t}
+                rowId={`task-${t.id}`}
+                highlighted={t.id === firstMatchId}
+                onEdit={(task) => {
+                  setEditing(task)
+                  setFormOpen(true)
+                }}
+              />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerGrid>
       ) : (
         <div className="grid gap-3 md:grid-cols-3">
           {(["todo", "in_progress", "done"] as TaskStatus[]).map((status) => (

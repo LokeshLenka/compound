@@ -22,6 +22,7 @@ import { HabitCard } from "@/features/habits/habit-card"
 import { SortableHabitCard } from "@/features/habits/sortable-habit-card"
 import { HabitFormDialog } from "@/features/habits/habit-form"
 import { currentStreak } from "@/lib/habits"
+import { StaggerGrid, StaggerItem } from "@/components/stagger-grid"
 import type { Habit } from "@/lib/types"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { PageHeader } from "@/components/page-header"
@@ -202,17 +203,18 @@ export default function HabitsPage() {
             </SortableContext>
           </DndContext>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2">
+          <StaggerGrid className="grid gap-3 md:grid-cols-2">
             {visible.map((h) => (
-              <HabitCard
-                key={h.id}
-                habit={h}
-                logs={allLogs}
-                onEdit={edit}
-                onDelete={setDeleting}
-              />
+              <StaggerItem key={h.id}>
+                <HabitCard
+                  habit={h}
+                  logs={allLogs}
+                  onEdit={edit}
+                  onDelete={setDeleting}
+                />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGrid>
         )
       ) : (
         <div className="rounded-3xl border border-border/50 bg-card card-shadow">

@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ThemeProvider } from "next-themes"
 import { useEffect, useState, type ReactNode } from "react"
+import { MotionConfig } from "motion/react"
 import { Toaster } from "@/components/ui/sonner"
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -35,8 +36,10 @@ export function Providers({ children }: { children: ReactNode }) {
         enableSystem
         disableTransitionOnChange
       >
-        {children}
-        <Toaster richColors position="top-center" />
+        <MotionConfig reducedMotion="user">
+          {children}
+          <Toaster richColors position="top-center" />
+        </MotionConfig>
       </ThemeProvider>
     </QueryClientProvider>
   )

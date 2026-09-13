@@ -1,5 +1,6 @@
 "use client"
 
+import { motion } from "motion/react"
 import { Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -13,17 +14,22 @@ export function CreateFab({
   className?: string
 }) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
       aria-label={label}
+      whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.94 }}
+      initial={{ scale: 0, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 500, damping: 28 }}
       className={cn(
-        "fixed right-4 bottom-24 z-40 grid size-14 place-items-center rounded-full border border-primary/20 bg-primary text-primary-foreground shadow-lg transition-all touch-manipulation hover:bg-primary/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95 md:hidden",
+        "fixed right-4 bottom-24 z-40 grid size-14 place-items-center rounded-full border border-primary/20 bg-primary text-primary-foreground shadow-lg touch-manipulation md:hidden",
         "bottom-[calc(6rem+env(safe-area-inset-bottom))]",
         className,
       )}
     >
       <Plus className="size-6" />
-    </button>
+    </motion.button>
   )
 }

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { AppShell } from "@/components/app-shell"
 import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { PageTransitionWrapper } from "@/components/page-transition-wrapper"
 
 export default async function AppLayout({
   children,
@@ -20,5 +21,5 @@ export default async function AppLayout({
     .eq("id", user.id)
     .maybeSingle()
 
-  return <AppShell profile={profile}>{children}</AppShell>
+  return <AppShell profile={profile}><PageTransitionWrapper>{children}</PageTransitionWrapper></AppShell>
 }
