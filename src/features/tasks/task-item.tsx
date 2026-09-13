@@ -188,17 +188,12 @@ export function TaskRow({
             }
           />
           <SheetContent side="bottom" className="p-0">
-            <SheetHeader className="flex items-center justify-between px-4 py-3 border-b">
-              <SheetTitle className="text-sm font-medium">Actions</SheetTitle>
-              <SheetClose>
-                <Button variant="ghost" size="icon" className="size-8">
-                  <X className="size-4" />
-                </Button>
-              </SheetClose>
-            </SheetHeader>
             <div className="px-4 py-2 space-y-2">
               <motion.button
-                onClick={() => { onEdit(task); setSheetOpen(false) }}
+                onClick={() => {
+                  onEdit(task);
+                  setSheetOpen(false);
+                }}
                 whileTap={{ scale: 0.98 }}
                 className="flex w-full items-center gap-3 px-3 py-3 rounded-xl text-left text-sm font-medium hover:bg-accent transition-colors"
               >
@@ -206,7 +201,13 @@ export function TaskRow({
                 Edit
               </motion.button>
               <motion.button
-                onClick={() => { setStatus.mutate({ id: task.id, status: nextStatus[task.status] }); setSheetOpen(false) }}
+                onClick={() => {
+                  setStatus.mutate({
+                    id: task.id,
+                    status: nextStatus[task.status],
+                  });
+                  setSheetOpen(false);
+                }}
                 whileTap={{ scale: 0.98 }}
                 className="flex w-full items-center gap-3 px-3 py-3 rounded-xl text-left text-sm font-medium hover:bg-accent transition-colors"
               >
@@ -214,7 +215,10 @@ export function TaskRow({
                 {STATUS_META[nextStatus[task.status]].label}
               </motion.button>
               <motion.button
-                onClick={() => { deleteTask.mutate(task.id); setSheetOpen(false) }}
+                onClick={() => {
+                  deleteTask.mutate(task.id);
+                  setSheetOpen(false);
+                }}
                 whileTap={{ scale: 0.98 }}
                 className="flex w-full items-center gap-3 px-3 py-3 rounded-xl text-left text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
               >
