@@ -27,8 +27,6 @@ import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { StaggerGrid, StaggerItem } from "@/components/stagger-grid"
 import { CreateFab } from "@/components/create-fab"
@@ -254,11 +252,6 @@ export default function DashboardPage() {
                     {formatAmount(waterToday, waterUnit)} / {formatAmount(waterGoal, waterUnit)}
                   </span>
                 </div>
-                <Progress
-                  value={waterPct}
-                  className="h-2"
-                  aria-label={`Water progress ${waterPct} percent`}
-                />
               </div>
             </div>
 
