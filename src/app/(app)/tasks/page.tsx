@@ -2,7 +2,15 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Plus, Search, List, Columns3, ListChecks } from "lucide-react"
+import {
+  Plus,
+  Search,
+  List,
+  Columns3,
+  ListChecks,
+  SlidersHorizontal,
+  X,
+} from "lucide-react"
 import {
   useTasks,
   useProjects,
@@ -26,6 +34,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 type Filter = "all" | TaskStatus
 
@@ -148,14 +161,15 @@ function TasksPageContent() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Desktop filter bar */}
+      <div className="hidden flex-wrap items-center gap-2 md:flex">
         <div className="flex gap-1 rounded-full border p-1">
           {FILTERS.map((f) => (
             <Button
               key={f.value}
               variant={filter === f.value ? "secondary" : "ghost"}
               size="sm"
-              className="h-9 rounded-full md:h-7"
+              className="h-7 rounded-full"
               onClick={() => setFilter(f.value)}
             >
               {f.label}
@@ -205,7 +219,7 @@ function TasksPageContent() {
           <Button
             variant={view === "list" ? "secondary" : "ghost"}
             size="sm"
-            className="h-9 rounded-full md:h-7"
+            className="h-7 rounded-full"
             onClick={() => setView("list")}
           >
             <List className="mr-1 size-3.5" /> List
@@ -213,10 +227,125 @@ function TasksPageContent() {
           <Button
             variant={view === "board" ? "secondary" : "ghost"}
             size="sm"
-            className="h-9 rounded-full md:h-7"
+            className="h-7 rounded-full"
             onClick={() => setView("board")}
           >
             <Columns3 className="mr-1 size-3.5" /> Board
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile filter bar */}
+      <div className="flex items-center gap-2 md:hidden">
+        <div className="relative min-w-0 flex-1">
+          <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search tasks…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button variant="outline" size="sm" className="h-9 shrink-0 gap-1.5 px-2.5">
+                <SlidersHorizontal className="size-3.5" />
+                {(filter !== "all" || priority !== "all" || projectId !== "all") && (
+                  <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    {[filter !== "all", priority !== "all", projectId !== "all"].filter(Boolean).length}
+                  </span>
+                )}
+              </Button>
+            }
+          />
+
+          <PopoverContent align="end" side="bottom" sideOffset={4} className="w-64">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">Status</span>
+                {(filter !== "all" || priority !== "all" || projectId !== "all") && (
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => { setFilter("all"); setPriority("all"); setProjectId("all") }}
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {FILTERS.map((f) => (
+                  <button
+                    key={f.value}
+                    type="button"
+                    onClick={() => setFilter(f.value)}
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-xs font-medium transition",
+                      filter === f.value
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Priority</span>
+                <Select value={priority} onValueChange={(v) => setPriority(v ?? "all")}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All priorities" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All priorities</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Project</span>
+                <Select value={projectId} onValueChange={(v) => setProjectId(v ?? "all")}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All projects" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All projects</SelectItem>
+                    <SelectItem value="none">No project</SelectItem>
+                    {projects?.map((p: Project) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <div className="flex shrink-0 gap-1 rounded-full border p-1">
+          <Button
+            variant={view === "list" ? "secondary" : "ghost"}
+            size="sm"
+            className="h-9 rounded-full"
+            onClick={() => setView("list")}
+          >
+            <List className="size-3.5" />
+          </Button>
+          <Button
+            variant={view === "board" ? "secondary" : "ghost"}
+            size="sm"
+            className="h-9 rounded-full"
+            onClick={() => setView("board")}
+          >
+            <Columns3 className="size-3.5" />
           </Button>
         </div>
       </div>
