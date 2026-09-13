@@ -222,7 +222,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         ) : (
-          <StaggerGrid className="space-y-2">
+          <StaggerGrid className="grid gap-2 sm:grid-cols-2">
             {openTasks.slice(0, 6).map((t, index) => (
               <StaggerItem key={t.id}>
                 <TaskDashboardRow
