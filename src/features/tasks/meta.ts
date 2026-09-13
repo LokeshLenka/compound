@@ -33,11 +33,11 @@ export const STATUS_META: Record<TaskStatus, { label: string; classes: string }>
   },
   in_progress: {
     label: "In progress",
-    classes: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+    classes: "bg-blue-500 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
   },
   done: {
     label: "Done",
-    classes: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300",
+    classes: "bg-green-300 text-green-700 dark:bg-green-950 dark:text-green-300",
   },
   archived: {
     label: "Archived",
