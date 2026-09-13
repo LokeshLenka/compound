@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useTheme } from "next-themes"
+import { useRef, useEffect, useState } from "react"
+import { motion } from "motion/react"
 import {
   BookOpen,
   FileText,
@@ -87,31 +89,64 @@ function NavLinks({
 }
 
 function MobileBottomNav({ pathname }: { pathname: string }) {
+  const navRef = useRef<HTMLDivElement>(null)
+  const itemRefs = useRef<Map<string, HTMLAnchorElement>>(new Map())
+  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null)
+
+  const activeHref = NAV.find(
+    ({ href }) => pathname === href || pathname.startsWith(`${href}/`),
+  )?.href
+
+  useEffect(() => {
+    if (!activeHref || !navRef.current) return
+    const el = itemRefs.current.get(activeHref)
+    if (!el) return
+    const navRect = navRef.current.getBoundingClientRect()
+    const elRect = el.getBoundingClientRect()
+    setIndicator({
+      left: elRect.left - navRect.left + (elRect.width - 36) / 2,
+      width: 36,
+    })
+  }, [activeHref])
+
   return (
     <nav
+      ref={navRef}
       aria-label="Primary"
       className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md items-center justify-between rounded-full border bg-background/90 px-2 py-1.5 shadow-lg backdrop-blur md:hidden"
     >
+      {indicator && (
+        <motion.span
+          aria-hidden
+          className="absolute top-1/2 -translate-y-1/2 rounded-full bg-primary/15"
+          initial={false}
+          animate={{ left: indicator.left, width: indicator.width }}
+          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          style={{ height: 36 }}
+        />
+      )}
       {NAV.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`)
         return (
           <Link
             key={href}
             href={href}
+            ref={(el) => {
+              if (el) itemRefs.current.set(href, el)
+            }}
             aria-label={label}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative flex size-11 items-center justify-center rounded-full transition-colors active:scale-95",
-              active ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+              "relative z-10 flex size-11 items-center justify-center rounded-full transition-colors",
+              active ? "text-primary" : "text-muted-foreground",
             )}
           >
-            <Icon className="size-5" aria-hidden />
-            {active && (
-              <span
-                aria-hidden
-                className="absolute -bottom-0.5 size-1 rounded-full bg-primary-foreground/80"
-              />
-            )}
+            <motion.div
+              animate={active ? { scale: 1.15 } : { scale: 1 }}
+              transition={{ type: "spring", stiffness: 500, damping: 28 }}
+            >
+              <Icon className="size-5" aria-hidden />
+            </motion.div>
           </Link>
         )
       })}
@@ -220,11 +255,12 @@ export function AppShell({
         </div>
       </aside>
 
-      {/* Mobile top bar — no drawer; tabs + actions only */}
+      {/* Mobile top bar */}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-border/60 bg-background/85 px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 backdrop-blur md:hidden">
           <span className="font-semibold tracking-tight">Compound</span>
           <div className="ml-auto flex items-center gap-1 md:hidden">
+            <GlobalSearch iconOnly />
             <ThemeToggle />
             <Link
               href="/settings"
