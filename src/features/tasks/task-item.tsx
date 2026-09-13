@@ -1,6 +1,7 @@
 "use client"
 
 import { CalendarDays, Pencil, Trash2, MoreVertical, CheckCircle2, Circle, ArrowUpRight } from "lucide-react"
+import { motion, AnimatePresence } from "motion/react"
 import type { Task, TaskStatus } from "@/lib/types"
 import { humanDate } from "@/lib/dates"
 import { useSetTaskStatus, useDeleteTask } from "@/features/tasks/use-tasks"
