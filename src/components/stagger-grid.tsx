@@ -36,7 +36,7 @@ export function StaggerItem({
 }) {
   return (
     <motion.div
-      className={cn(className)}
+      className={cn("min-w-0 w-full", className)}
       variants={{
         hidden: { opacity: 0, y: 12 },
         show: {

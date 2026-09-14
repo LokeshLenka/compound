@@ -53,7 +53,7 @@ export function HabitCard({
   const today = toISODate(new Date())
 
   return (
-    <Card className="h-fit">
+    <Card className="h-fit w-full">
       <CardContent className="space-y-3 p-4">
         <div className="flex items-center gap-2.5">
           <span
