@@ -18,6 +18,7 @@ import {
   Settings,
   Droplet,
   Wallet,
+  MoreHorizontal,
 } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
@@ -25,6 +26,12 @@ import { GlobalSearch } from "@/features/search/global-search"
 import { InstallPrompt } from "@/components/install-prompt"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { Profile } from "@/lib/types"
 
 const NAV = [
@@ -36,6 +43,19 @@ const NAV = [
   { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/expenses", label: "Expenses", icon: Wallet },
   { href: "/water", label: "Water", icon: Droplet },
+]
+
+const MOBILE_PRIMARY = [
+  { href: "/habits", label: "Habits", icon: Repeat },
+  { href: "/tasks", label: "Tasks", icon: ListChecks },
+  { href: "/water", label: "Water", icon: Droplet },
+  { href: "/expenses", label: "Expenses", icon: Wallet },
+]
+
+const MOBILE_MORE = [
+  { href: "/diary", label: "Diary", icon: BookOpen },
+  { href: "/journal", label: "Journal", icon: NotebookPen },
+  { href: "/notes", label: "Notes", icon: FileText },
 ]
 
 function NavLinks({
@@ -94,15 +114,35 @@ function NavLinks({
 
 function MobileBottomNav({ pathname }: { pathname: string }) {
   const navRef = useRef<HTMLDivElement>(null)
-  const itemRefs = useRef<Map<string, HTMLAnchorElement>>(new Map())
+  const itemRefs = useRef<Map<string, HTMLElement>>(new Map())
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null)
 
-  const activeHref = NAV.find(
+  const isMoreActive = MOBILE_MORE.some(
+    ({ href }) => pathname === href || pathname.startsWith(`${href}/`),
+  )
+
+  const activeHref = MOBILE_PRIMARY.find(
     ({ href }) => pathname === href || pathname.startsWith(`${href}/`),
   )?.href
 
   useEffect(() => {
-    if (!activeHref || !navRef.current) return
+    if (!navRef.current) return
+    if (isMoreActive) {
+      const moreBtn = itemRefs.current.get("more")
+      if (moreBtn) {
+        const navRect = navRef.current.getBoundingClientRect()
+        const elRect = moreBtn.getBoundingClientRect()
+        setIndicator({
+          left: elRect.left - navRect.left + (elRect.width - 36) / 2,
+          width: 36,
+        })
+      }
+      return
+    }
+    if (!activeHref) {
+      setIndicator(null)
+      return
+    }
     const el = itemRefs.current.get(activeHref)
     if (!el) return
     const navRect = navRef.current.getBoundingClientRect()
@@ -111,7 +151,7 @@ function MobileBottomNav({ pathname }: { pathname: string }) {
       left: elRect.left - navRect.left + (elRect.width - 36) / 2,
       width: 36,
     })
-  }, [activeHref])
+  }, [activeHref, isMoreActive])
 
   return (
     <nav
@@ -129,7 +169,7 @@ function MobileBottomNav({ pathname }: { pathname: string }) {
           style={{ height: 36 }}
         />
       )}
-      {NAV.map(({ href, label, icon: Icon }) => {
+      {MOBILE_PRIMARY.map(({ href, label, icon: Icon }) => {
         const active = pathname === href || pathname.startsWith(`${href}/`)
         return (
           <Link
@@ -154,6 +194,46 @@ function MobileBottomNav({ pathname }: { pathname: string }) {
           </Link>
         )
       })}
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          ref={(el) => {
+            if (el) itemRefs.current.set("more", el)
+          }}
+          className={cn(
+            "relative z-10 flex size-11 items-center justify-center rounded-full transition-colors",
+            isMoreActive ? "text-primary" : "text-muted-foreground",
+          )}
+        >
+          <motion.div
+            animate={isMoreActive ? { scale: 1.15 } : { scale: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 28 }}
+          >
+            <MoreHorizontal className="size-5" aria-hidden />
+          </motion.div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="top" sideOffset={8} align="end">
+          {MOBILE_MORE.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(`${href}/`)
+            return (
+              <DropdownMenuItem
+                key={href}
+                render={
+                  <Link
+                    href={href}
+                    className={cn(
+                      "flex items-center gap-2",
+                      active && "text-primary",
+                    )}
+                  />
+                }
+              >
+                <Icon className="size-4" aria-hidden />
+                {label}
+              </DropdownMenuItem>
+            )
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </nav>
   )
 }

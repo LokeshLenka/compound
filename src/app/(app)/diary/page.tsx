@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import { Save, Trash2, Volume2, VolumeX, X, PenLine } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Save, Trash2, Volume2, VolumeX, X, PenLine, SlidersHorizontal } from "lucide-react"
 import { useDiaryEntries, useSaveDiaryEntry, useDeleteDiaryEntry } from "@/features/diary/use-diary"
 import { DiaryCalendar } from "@/features/diary/diary-calendar"
 import { MarkdownEditor } from "@/features/notes/markdown-editor"
@@ -16,6 +16,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Component as VintageKeyboard } from "@/components/ui/vintage-keyboard"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+
+const AUTO_SAVE_DELAY = 2000
 
 export default function DiaryPage() {
   const { data: entries, isLoading } = useDiaryEntries()
@@ -37,6 +45,10 @@ export default function DiaryPage() {
   const [dirty, setDirty] = useState(false)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [editing, setEditing] = useState(false)
+  const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false)
+
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastSavedRef = useRef<string>("")
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -49,6 +61,44 @@ export default function DiaryPage() {
   }, [entry, selectedDate])
   /* eslint-enable react-hooks/set-state-in-effect */
 
+  const snapshot = useMemo(
+    () => JSON.stringify({ title, content, mood, weather, tagsInput }),
+    [title, content, mood, weather, tagsInput],
+  )
+
+  const doSave = useCallback(async () => {
+    const payload = {
+      entry_date: selectedDate,
+      values: {
+        title,
+        content,
+        mood,
+        weather: weather || null,
+        tags: splitTags(tagsInput || ""),
+      },
+    }
+    await saveEntry.mutateAsync(payload)
+    lastSavedRef.current = snapshot
+    setDirty(false)
+  }, [selectedDate, title, content, mood, weather, tagsInput, snapshot, saveEntry])
+
+  useEffect(() => {
+    if (!dirty || snapshot === lastSavedRef.current) return
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => {
+      void doSave()
+    }, AUTO_SAVE_DELAY)
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    }
+  }, [dirty, snapshot, doSave])
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    }
+  }, [])
+
   function noteDirty() {
     setDirty(true)
   }
@@ -60,24 +110,122 @@ export default function DiaryPage() {
   }
 
   function closeEditor() {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    if (dirty && snapshot !== lastSavedRef.current) {
+      void doSave()
+    }
     setEditing(false)
   }
 
-  async function handleSave() {
-    await saveEntry.mutateAsync({
-      entry_date: selectedDate,
-      values: {
-        title,
-        content,
-        mood,
-        weather: weather || null,
-        tags: splitTags(tagsInput || ""),
-      },
-    })
-    setDirty(false)
-  }
-
   if (editing) {
+    const sidebarContent = (
+      <div className="space-y-5">
+        {/* Calendar */}
+        <div className={isLoading ? "animate-pulse" : ""}>
+          <DiaryCalendar
+            entries={entries ?? []}
+            selectedDate={selectedDate}
+            onSelect={(d) => {
+              setSelectedDate(d)
+              setMobileSettingsOpen(false)
+            }}
+          />
+        </div>
+
+        {/* Mood */}
+        <div className="space-y-2.5">
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Mood
+          </Label>
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Mood">
+            {MOODS.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                aria-label={m.label}
+                aria-pressed={mood === m.value}
+                onClick={() => {
+                  setMood(mood === m.value ? null : m.value)
+                  noteDirty()
+                }}
+                className={cn(
+                  "grid size-9 place-items-center rounded-full text-lg transition active:scale-95",
+                  mood === m.value
+                    ? "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/40 ring-offset-1 ring-offset-background"
+                    : "bg-muted/60 hover:bg-muted",
+                )}
+              >
+                <span aria-hidden>{m.emoji}</span>
+              </button>
+            ))}
+            {mood !== null && mood !== undefined && (
+              <button
+                type="button"
+                onClick={() => {
+                  setMood(null)
+                  noteDirty()
+                }}
+                className="ml-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Weather */}
+        <div className="space-y-2.5">
+          <Label htmlFor="diary-weather" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Weather
+          </Label>
+          <Input
+            id="diary-weather"
+            placeholder="e.g. sunny, 21°"
+            value={weather}
+            onChange={(e) => {
+              setWeather(e.target.value)
+              noteDirty()
+            }}
+          />
+        </div>
+
+        {/* Tags */}
+        <div className="space-y-2.5">
+          <Label htmlFor="diary-tags" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Tags
+          </Label>
+          <Input
+            id="diary-tags"
+            placeholder="work, hike, food"
+            value={tagsInput}
+            onChange={(e) => {
+              setTagsInput(e.target.value)
+              noteDirty()
+            }}
+          />
+        </div>
+
+        {/* Sound toggle */}
+        <div className="space-y-2.5">
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Sound
+          </Label>
+          <button
+            type="button"
+            onClick={() => setSoundEnabled((s) => !s)}
+            className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {soundEnabled ? (
+              <Volume2 className="size-4" />
+            ) : (
+              <VolumeX className="size-4" />
+            )}
+            {soundEnabled ? "On" : "Off"}
+          </button>
+        </div>
+      </div>
+    )
+
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-background">
         {/* Header */}
@@ -97,6 +245,16 @@ export default function DiaryPage() {
             {dirty && <span className="ml-2 text-xs text-orange-500">Unsaved</span>}
           </h2>
           <div className="flex items-center gap-2">
+            {/* Mobile: settings toggle */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setMobileSettingsOpen(true)}
+            >
+              <SlidersHorizontal className="size-4" />
+            </Button>
             {entry && (
               <Button
                 type="button"
@@ -144,110 +302,9 @@ export default function DiaryPage() {
               </div>
             </div>
 
-            {/* Sidebar: calendar, mood, weather, tags, sound */}
-            <aside className="shrink-0 border-t p-4 sm:p-5 lg:w-72 lg:border-t-0 lg:border-l lg:overflow-y-auto">
-              <div className="space-y-5">
-                {/* Calendar */}
-                <div className={isLoading ? "animate-pulse" : ""}>
-                  <DiaryCalendar
-                    entries={entries ?? []}
-                    selectedDate={selectedDate}
-                    onSelect={setSelectedDate}
-                  />
-                </div>
-
-                {/* Mood */}
-                <div className="space-y-2.5">
-                  <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Mood
-                  </Label>
-                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Mood">
-                    {MOODS.map((m) => (
-                      <button
-                        key={m.value}
-                        type="button"
-                        aria-label={m.label}
-                        aria-pressed={mood === m.value}
-                        onClick={() => {
-                          setMood(mood === m.value ? null : m.value)
-                          noteDirty()
-                        }}
-                        className={cn(
-                          "grid size-9 place-items-center rounded-full text-lg transition active:scale-95",
-                          mood === m.value
-                            ? "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/40 ring-offset-1 ring-offset-background"
-                            : "bg-muted/60 hover:bg-muted",
-                        )}
-                      >
-                        <span aria-hidden>{m.emoji}</span>
-                      </button>
-                    ))}
-                    {mood !== null && mood !== undefined && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMood(null)
-                          noteDirty()
-                        }}
-                        className="ml-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Weather */}
-                <div className="space-y-2.5">
-                  <Label htmlFor="diary-weather" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Weather
-                  </Label>
-                  <Input
-                    id="diary-weather"
-                    placeholder="e.g. sunny, 21°"
-                    value={weather}
-                    onChange={(e) => {
-                      setWeather(e.target.value)
-                      noteDirty()
-                    }}
-                  />
-                </div>
-
-                {/* Tags */}
-                <div className="space-y-2.5">
-                  <Label htmlFor="diary-tags" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Tags
-                  </Label>
-                  <Input
-                    id="diary-tags"
-                    placeholder="work, hike, food"
-                    value={tagsInput}
-                    onChange={(e) => {
-                      setTagsInput(e.target.value)
-                      noteDirty()
-                    }}
-                  />
-                </div>
-
-                {/* Sound toggle */}
-                <div className="space-y-2.5">
-                  <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Sound
-                  </Label>
-                  <button
-                    type="button"
-                    onClick={() => setSoundEnabled((s) => !s)}
-                    className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    {soundEnabled ? (
-                      <Volume2 className="size-4" />
-                    ) : (
-                      <VolumeX className="size-4" />
-                    )}
-                    {soundEnabled ? "On" : "Off"}
-                  </button>
-                </div>
-              </div>
+            {/* Desktop sidebar */}
+            <aside className="hidden shrink-0 border-l p-4 sm:p-5 lg:block lg:w-72 lg:overflow-y-auto">
+              {sidebarContent}
             </aside>
           </div>
 
@@ -258,8 +315,33 @@ export default function DiaryPage() {
             </div>
           </div>
         </div>
+
+        {/* Mobile settings sheet */}
+        <Sheet open={mobileSettingsOpen} onOpenChange={setMobileSettingsOpen}>
+          <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Settings</SheetTitle>
+            </SheetHeader>
+            {sidebarContent}
+          </SheetContent>
+        </Sheet>
       </div>
     )
+  }
+
+  async function handleSave() {
+    await saveEntry.mutateAsync({
+      entry_date: selectedDate,
+      values: {
+        title,
+        content,
+        mood,
+        weather: weather || null,
+        tags: splitTags(tagsInput || ""),
+      },
+    })
+    lastSavedRef.current = snapshot
+    setDirty(false)
   }
 
   return (
