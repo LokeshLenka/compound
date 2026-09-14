@@ -9,11 +9,13 @@ import {
   Droplet,
   FileText,
   ListChecks,
+  NotebookPen,
   PenLine,
   Repeat,
   CheckCircle2,
   Flame,
   PlusCircle,
+  Wallet,
 } from "lucide-react";
 import {
   useHabits,
@@ -23,6 +25,8 @@ import {
 import { useTasks, useSetTaskStatus } from "@/features/tasks/use-tasks";
 import { useNotes } from "@/features/notes/use-notes";
 import { useDiaryEntries } from "@/features/diary/use-diary";
+import { useJournalEntries } from "@/features/journaling/use-journaling";
+import { useTransactions } from "@/features/expenses/use-expenses";
 import {
   useWaterLogs,
   useWaterSettings,
@@ -55,6 +59,8 @@ export default function DashboardPage() {
   const { data: tasks = [] } = useTasks();
   const { data: notes = [] } = useNotes();
   const { data: diary } = useDiaryEntries();
+  const { data: journal = [] } = useJournalEntries();
+  const { data: transactions = [] } = useTransactions();
   const { data: waterLogs = [] } = useWaterLogs();
   const { data: waterSettings } = useWaterSettings();
   const toggleLog = useToggleLog();
@@ -393,6 +399,111 @@ export default function DashboardPage() {
                   )}
                 >
                   All notes <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </motion.section>
+
+      {/* Journal & Expenses Quick Access */}
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.25 }}
+        className="grid gap-3 sm:grid-cols-2"
+      >
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="grid size-8 place-items-center rounded-xl bg-chart-3/12 text-chart-3">
+                <NotebookPen className="size-4" aria-hidden />
+              </span>
+              Journal
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {journal.length === 0 ? (
+              <Link
+                href="/journal?create=1"
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "w-full justify-center",
+                )}
+              >
+                Start journaling <ArrowRight className="size-3.5" />
+              </Link>
+            ) : (
+              <>
+                <p className="truncate text-sm font-medium">
+                  {journal[0].title ||
+                    journal[0].content.slice(0, 60) ||
+                    "Untitled"}
+                </p>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  {journal.length} {journal.length === 1 ? "entry" : "entries"} ·{" "}
+                  {humanDate(journal[0].created_at, "MMM d")}
+                </p>
+                <Link
+                  href="/journal"
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "w-full justify-center",
+                  )}
+                >
+                  Open journal <ArrowRight className="size-3.5" />
+                </Link>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="grid size-8 place-items-center rounded-xl bg-chart-2/12 text-chart-2">
+                <Wallet className="size-4" aria-hidden />
+              </span>
+              Spending
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {transactions.length === 0 ? (
+              <Link
+                href="/expenses?create=1"
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "w-full justify-center",
+                )}
+              >
+                Log first transaction <ArrowRight className="size-3.5" />
+              </Link>
+            ) : (
+              <>
+                <p className="text-sm font-medium tabular-nums">
+                  {transactions
+                    .filter(
+                      (t) =>
+                        t.type === "expense" &&
+                        t.date.slice(0, 7) === today.slice(0, 7),
+                    )
+                    .reduce((s, t) => s + Number(t.amount), 0)
+                    .toLocaleString(undefined, {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                  <span className="font-normal text-muted-foreground">
+                    spent this month
+                  </span>
+                </p>
+                <Link
+                  href="/expenses"
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "w-full justify-center",
+                  )}
+                >
+                  Open expenses <ArrowRight className="size-3.5" />
                 </Link>
               </>
             )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { FileText, ListChecks, Repeat, BookOpen, Search } from "lucide-react"
+import { FileText, ListChecks, Repeat, BookOpen, Search, NotebookPen, Wallet } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useGlobalSearch } from "./use-global-search"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,8 @@ const KIND_ICONS = {
   task: ListChecks,
   note: FileText,
   diary: BookOpen,
+  journal: NotebookPen,
+  expense: Wallet,
 }
 
 export function GlobalSearch({ iconOnly = false }: { iconOnly?: boolean }) {

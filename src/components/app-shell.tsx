@@ -12,10 +12,12 @@ import {
   ListChecks,
   LogOut,
   Moon,
+  NotebookPen,
   Repeat,
   Sun,
   Settings,
   Droplet,
+  Wallet,
 } from "lucide-react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 import { cn } from "@/lib/utils"
@@ -31,6 +33,8 @@ const NAV = [
   { href: "/tasks", label: "Tasks", icon: ListChecks },
   { href: "/notes", label: "Notes", icon: FileText },
   { href: "/diary", label: "Diary", icon: BookOpen },
+  { href: "/journal", label: "Journal", icon: NotebookPen },
+  { href: "/expenses", label: "Expenses", icon: Wallet },
   { href: "/water", label: "Water", icon: Droplet },
 ]
 

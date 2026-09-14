@@ -5,7 +5,7 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 
 export interface SearchResult {
   id: string
-  kind: "habit" | "task" | "note" | "diary"
+  kind: "habit" | "task" | "note" | "diary" | "journal" | "expense"
   title: string
   subtitle: string
   href: string
@@ -18,9 +18,11 @@ const KINDS: { kind: SearchResult["kind"]; label: string }[] = [
   { kind: "task", label: "Tasks" },
   { kind: "note", label: "Notes" },
   { kind: "diary", label: "Diary" },
+  { kind: "journal", label: "Journal" },
+  { kind: "expense", label: "Expenses" },
 ]
 
-/** Searches habits, tasks, notes and diary entries by name/title/content. */
+/** Searches habits, tasks, notes, diary, journal entries and expense categories. */
 export function useGlobalSearch(q: string) {
   const trimmed = q.trim()
   return useQuery({
@@ -29,7 +31,7 @@ export function useGlobalSearch(q: string) {
     queryFn: async (): Promise<Grouped[]> => {
       const supabase = getSupabaseBrowserClient()
       const like = `%${trimmed}%`
-      const [habits, tasks, notes, diary] = await Promise.all([
+      const [habits, tasks, notes, diary, journal, expenses] = await Promise.all([
         supabase
           .from("habits")
           .select("id, name, emoji")
@@ -56,6 +58,18 @@ export function useGlobalSearch(q: string) {
           .select("id, entry_date, content")
           .ilike("content", like)
           .order("entry_date", { ascending: false })
+          .limit(4),
+        supabase
+          .from("journal_entries")
+          .select("id, title, content")
+          .ilike("title", like)
+          .order("created_at", { ascending: false })
+          .limit(4),
+        supabase
+          .from("expense_categories")
+          .select("id, name, type")
+          .ilike("name", like)
+          .order("name")
           .limit(4),
       ])
 
@@ -87,6 +101,20 @@ export function useGlobalSearch(q: string) {
           title: d.entry_date.slice(0, 10),
           subtitle: (d.content ?? "").slice(0, 60) || "Note",
           href: "/diary",
+        })),
+        ...(journal.data ?? []).map((j: { id: string; title: string | null; content: string | null }) => ({
+          id: j.id,
+          kind: "journal" as const,
+          title: j.title || (j.content ?? "").slice(0, 60) || "Untitled",
+          subtitle: "Journal entry",
+          href: "/journal",
+        })),
+        ...(expenses.data ?? []).map((c: { id: string; name: string; type: string }) => ({
+          id: c.id,
+          kind: "expense" as const,
+          title: c.name,
+          subtitle: c.type === "income" ? "Income category" : "Expense category",
+          href: "/expenses",
         })),
       ]
 

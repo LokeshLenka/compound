@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Plus, Repeat, ListChecks, FileText } from "lucide-react"
+import { Plus, Repeat, ListChecks, FileText, NotebookPen, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CreateFab } from "@/components/create-fab"
 import {
@@ -18,6 +18,8 @@ const ACTIONS = [
   { label: "Habit", href: "/habits?create=1", icon: Repeat },
   { label: "Task", href: "/tasks?create=1", icon: ListChecks },
   { label: "Note", href: "/notes?create=1", icon: FileText },
+  { label: "Journal entry", href: "/journal?create=1", icon: NotebookPen },
+  { label: "Expense", href: "/expenses?create=1", icon: Wallet },
 ]
 
 function QuickAddItems() {
