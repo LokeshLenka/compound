@@ -1,10 +1,9 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { PenLine, Save, Trash2 } from "lucide-react"
+import { Save, Trash2, Volume2, VolumeX, X, PenLine } from "lucide-react"
 import { useDiaryEntries, useSaveDiaryEntry, useDeleteDiaryEntry } from "@/features/diary/use-diary"
 import { DiaryCalendar } from "@/features/diary/diary-calendar"
-import { DiaryBook } from "@/features/diary/diary-book"
 import { MarkdownEditor } from "@/features/notes/markdown-editor"
 import { MOODS, moodEmoji } from "@/features/diary/moods"
 import { todayISO, humanDate } from "@/lib/dates"
@@ -16,7 +15,7 @@ import { PageHeader } from "@/components/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Component as VintageKeyboard } from "@/components/ui/vintage-keyboard"
 
 export default function DiaryPage() {
   const { data: entries, isLoading } = useDiaryEntries()
@@ -36,8 +35,10 @@ export default function DiaryPage() {
   const [weather, setWeather] = useState("")
   const [tagsInput, setTagsInput] = useState("")
   const [dirty, setDirty] = useState(false)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [editing, setEditing] = useState(false)
 
-  /* eslint-disable react-hooks/set-state-in-effect */ // syncs editor to the selected day's entry
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setTitle(entry?.title ?? "")
     setContent(entry?.content ?? "")
@@ -52,9 +53,14 @@ export default function DiaryPage() {
     setDirty(true)
   }
 
-  function focusEditor() {
-    document.getElementById("diary-writer")?.scrollIntoView({ behavior: "smooth", block: "start" })
-    document.getElementById("diary-title")?.focus()
+  function openEditor(date?: string) {
+    if (date) setSelectedDate(date)
+    setEditing(true)
+    setTimeout(() => document.getElementById("diary-title")?.focus(), 50)
+  }
+
+  function closeEditor() {
+    setEditing(false)
   }
 
   async function handleSave() {
@@ -71,11 +77,189 @@ export default function DiaryPage() {
     setDirty(false)
   }
 
-  // Book pages autosave on blur, but only when the draft actually changed.
-  async function handleBookCommit() {
-    const seed = byDate.get(selectedDate)
-    if (!dirty && title === (seed?.title ?? "") && content === (seed?.content ?? "")) return
-    await handleSave()
+  if (editing) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+        {/* Header */}
+        <header className="flex shrink-0 items-center justify-between border-b px-4 py-3 sm:px-6">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={closeEditor}
+            className="gap-1.5"
+          >
+            <X className="size-4" />
+            Close
+          </Button>
+          <h2 className="text-sm font-medium text-muted-foreground">
+            {humanDate(selectedDate, "EEEE, MMMM d, yyyy")}
+            {dirty && <span className="ml-2 text-xs text-orange-500">Unsaved</span>}
+          </h2>
+          <div className="flex items-center gap-2">
+            {entry && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => void deleteEntry.mutate(entry.id)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            )}
+            <Button size="sm" onClick={handleSave} disabled={saveEntry.isPending}>
+              <Save className="mr-1 size-3" />
+              Save
+            </Button>
+          </div>
+        </header>
+
+        {/* Body */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+            {/* Writing area */}
+            <div className="flex flex-1 flex-col overflow-y-auto p-4 sm:p-6 lg:p-8">
+              <Input
+                id="diary-title"
+                placeholder="A short title for today…"
+                className="text-xl font-semibold border-0 px-0 shadow-none focus-visible:ring-0 h-auto py-1"
+                autoFocus
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                  noteDirty()
+                }}
+              />
+              <div className="mt-2 flex-1 min-h-[50vh] lg:min-h-0">
+                <MarkdownEditor
+                  key={selectedDate}
+                  content={content}
+                  onChange={(md) => {
+                    setContent(md)
+                    noteDirty()
+                  }}
+                  placeholder="Write your day…"
+                />
+              </div>
+            </div>
+
+            {/* Sidebar: calendar, mood, weather, tags, sound */}
+            <aside className="shrink-0 border-t p-4 sm:p-5 lg:w-72 lg:border-t-0 lg:border-l lg:overflow-y-auto">
+              <div className="space-y-5">
+                {/* Calendar */}
+                <div className={isLoading ? "animate-pulse" : ""}>
+                  <DiaryCalendar
+                    entries={entries ?? []}
+                    selectedDate={selectedDate}
+                    onSelect={setSelectedDate}
+                  />
+                </div>
+
+                {/* Mood */}
+                <div className="space-y-2.5">
+                  <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Mood
+                  </Label>
+                  <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Mood">
+                    {MOODS.map((m) => (
+                      <button
+                        key={m.value}
+                        type="button"
+                        aria-label={m.label}
+                        aria-pressed={mood === m.value}
+                        onClick={() => {
+                          setMood(mood === m.value ? null : m.value)
+                          noteDirty()
+                        }}
+                        className={cn(
+                          "grid size-9 place-items-center rounded-full text-lg transition active:scale-95",
+                          mood === m.value
+                            ? "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/40 ring-offset-1 ring-offset-background"
+                            : "bg-muted/60 hover:bg-muted",
+                        )}
+                      >
+                        <span aria-hidden>{m.emoji}</span>
+                      </button>
+                    ))}
+                    {mood !== null && mood !== undefined && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMood(null)
+                          noteDirty()
+                        }}
+                        className="ml-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Weather */}
+                <div className="space-y-2.5">
+                  <Label htmlFor="diary-weather" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Weather
+                  </Label>
+                  <Input
+                    id="diary-weather"
+                    placeholder="e.g. sunny, 21°"
+                    value={weather}
+                    onChange={(e) => {
+                      setWeather(e.target.value)
+                      noteDirty()
+                    }}
+                  />
+                </div>
+
+                {/* Tags */}
+                <div className="space-y-2.5">
+                  <Label htmlFor="diary-tags" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Tags
+                  </Label>
+                  <Input
+                    id="diary-tags"
+                    placeholder="work, hike, food"
+                    value={tagsInput}
+                    onChange={(e) => {
+                      setTagsInput(e.target.value)
+                      noteDirty()
+                    }}
+                  />
+                </div>
+
+                {/* Sound toggle */}
+                <div className="space-y-2.5">
+                  <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Sound
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => setSoundEnabled((s) => !s)}
+                    className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {soundEnabled ? (
+                      <Volume2 className="size-4" />
+                    ) : (
+                      <VolumeX className="size-4" />
+                    )}
+                    {soundEnabled ? "On" : "Off"}
+                  </button>
+                </div>
+              </div>
+            </aside>
+          </div>
+
+          {/* Keyboard: desktop only */}
+          <div className="hidden max-h-[45vh] overflow-hidden border-t lg:block">
+            <div className="[&>.kb-viewport]:!min-h-0 [&>.kb-viewport]:h-full">
+              <VintageKeyboard muted={!soundEnabled} />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -83,143 +267,46 @@ export default function DiaryPage() {
       <PageHeader
         title="Diary"
         actions={
-          <Button onClick={focusEditor} className="hidden gap-1.5 md:inline-flex">
+          <Button onClick={() => openEditor()} className="hidden gap-1.5 md:inline-flex">
             <PenLine className="size-4" /> Write entry
           </Button>
         }
       />
-
-      <div className="hidden md:block">
-        <DiaryBook
-          entries={entries ?? []}
-          selectedDate={selectedDate}
-          onSelect={setSelectedDate}
-          editable
-          title={title}
-          content={content}
-          onTitleChange={(v) => {
-            setTitle(v)
-            noteDirty()
-          }}
-          onContentChange={(v) => {
-            setContent(v)
-            noteDirty()
-          }}
-          onCommit={handleBookCommit}
-        />
-      </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_1fr]">
         <div className={`order-2 lg:order-1 ${isLoading ? "animate-pulse" : ""}`}>
           <DiaryCalendar
             entries={entries ?? []}
             selectedDate={selectedDate}
-            onSelect={setSelectedDate}
+            onSelect={(d) => openEditor(d)}
           />
         </div>
 
-        <Card id="diary-writer" className="order-1 h-fit lg:order-2">
-          <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-            <CardTitle className="text-base">
-              {humanDate(selectedDate, "EEEE, MMMM d, yyyy")}
-              {entry && (
-                <span className="ml-2" aria-hidden>{moodEmoji(entry.mood)}</span>
-              )}
-            </CardTitle>
-            {entry && dirty && (
-              <span className="text-xs text-muted-foreground">Unsaved changes</span>
+        <div className="order-1 h-fit lg:order-2">
+          <button
+            type="button"
+            onClick={() => openEditor()}
+            className="w-full rounded-xl border border-dashed p-6 text-left text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted/30"
+          >
+            <div className="flex items-center gap-2">
+              <PenLine className="size-4" />
+              <span className="text-sm font-medium">
+                {entry ? "Edit entry for " + humanDate(selectedDate, "MMM d") : "Write for " + humanDate(selectedDate, "MMM d")}
+              </span>
+            </div>
+            {entry && (
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <span aria-hidden>{moodEmoji(entry.mood)}</span>
+                <span className="truncate">{entry.title || entry.content.slice(0, 60)}</span>
+              </div>
             )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-1.5">
-              {MOODS.map((m) => (
-                <button
-                  key={m.value}
-                  type="button"
-                  onClick={() => {
-                    setMood(mood === m.value ? null : m.value)
-                    noteDirty()
-                  }}
-                  title={m.label}
-                  className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-full border px-3 py-1.5 text-lg transition",
-                    mood === m.value
-                      ? "border-primary bg-accent"
-                      : "border-transparent hover:bg-accent/60",
-                  )}
-                >
-                  <span aria-hidden>{m.emoji}</span>
-                  <span className="text-[9px] text-muted-foreground">{m.label}</span>
-                </button>
-              ))}
-            </div>
-
-            <Input
-              id="diary-title"
-              placeholder="A short title for today…"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value)
-                noteDirty()
-              }}
-            />
-
-            <MarkdownEditor content={content} onChange={(md) => { setContent(md); noteDirty() }} placeholder="Write your day… " />
-
-            <div className="flex flex-wrap gap-4">
-              <div className="flex-1 space-y-1.5">
-                <Label htmlFor="diary-weather" className="text-xs">
-                  Weather
-                </Label>
-                <Input
-                  id="diary-weather"
-                  placeholder="e.g. sunny, 21°"
-                  value={weather}
-                  onChange={(e) => {
-                    setWeather(e.target.value)
-                    noteDirty()
-                  }}
-                />
-              </div>
-              <div className="flex-1 space-y-1.5">
-                <Label htmlFor="diary-tags" className="text-xs">
-                  Tags
-                </Label>
-                <Input
-                  id="diary-tags"
-                  placeholder="work, hike, food"
-                  value={tagsInput}
-                  onChange={(e) => {
-                    setTagsInput(e.target.value)
-                    noteDirty()
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button onClick={handleSave} disabled={saveEntry.isPending}>
-                <Save className="mr-1 size-4" /> Save day
-              </Button>
-              {entry && (
-                <Button
-                  variant="outline"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => {
-                    void deleteEntry.mutate(entry.id)
-                  }}
-                >
-                  <Trash2 className="mr-1 size-4" /> Delete entry
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+          </button>
+        </div>
       </div>
 
       <CreateFab
         label="Write today's entry"
-        onClick={focusEditor}
+        onClick={() => openEditor()}
       />
     </div>
   )
