@@ -65,3 +65,41 @@ export function splitTags(raw: string): string[] {
     .map((t) => t.trim().toLowerCase().replace(/\s+/g, "-"))
     .filter(Boolean)
 }
+
+export const journalSchema = z.object({
+  title: z.string().trim().max(140).default(""),
+  content: z.string().default(""),
+  mood: z.number().int().min(1).max(5).nullable().default(null),
+  tags: z.array(z.string()).default([]),
+  category: z.string().trim().max(40).default(""),
+})
+
+export type JournalFormValues = z.input<typeof journalSchema>
+
+export const expenseCategorySchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  type: z.enum(["income", "expense"]),
+  icon: z.string().default("tag"),
+  color: z.string().default("slate"),
+})
+
+export type ExpenseCategoryFormValues = z.input<typeof expenseCategorySchema>
+
+export const expenseTransactionSchema = z.object({
+  amount: z.coerce.number().positive("Amount must be positive"),
+  type: z.enum(["income", "expense"]),
+  category_id: z.string().uuid().nullable().default(null),
+  date: z.string().default(() => new Date().toISOString().slice(0, 10)),
+  note: z.string().default(""),
+  recurring_interval: z.string().nullable().default(null),
+})
+
+export type ExpenseTransactionFormValues = z.input<typeof expenseTransactionSchema>
+
+export const expenseBudgetSchema = z.object({
+  category_id: z.string().uuid(),
+  amount: z.coerce.number().positive("Budget must be positive"),
+  period: z.enum(["weekly", "monthly", "yearly"]).default("monthly"),
+})
+
+export type ExpenseBudgetFormValues = z.input<typeof expenseBudgetSchema>

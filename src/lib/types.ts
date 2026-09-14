@@ -106,3 +106,49 @@ export interface TagCount {
   tag: string
   count: number
 }
+
+export interface JournalEntry {
+  id: string
+  user_id: string
+  title: string
+  content: string
+  mood: number | null
+  tags: string[]
+  category: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ExpenseCategory {
+  id: string
+  user_id: string
+  name: string
+  type: "income" | "expense"
+  icon: string
+  color: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ExpenseTransaction {
+  id: string
+  user_id: string
+  amount: number
+  type: "income" | "expense"
+  category_id: string | null
+  date: string
+  note: string
+  recurring_interval: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface ExpenseBudget {
+  id: string
+  user_id: string
+  category_id: string
+  amount: number
+  period: "weekly" | "monthly" | "yearly"
+  created_at: string
+  updated_at: string
+}
