@@ -145,51 +145,31 @@ export function HabitFormDialog({
                 {...register("emoji")}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Color</Label>
-              <div className="flex flex-wrap gap-1.5 pt-1">
-                {HABIT_COLORS.map((c) => (
-                  <button
-                    key={c.name}
-                    type="button"
-                    aria-label={`Color ${c.name}`}
-                    onClick={() =>
-                      setValue("color", c.name, { shouldDirty: true })
-                    }
-                    className={cn(
-                      "size-6 rounded-full ring-offset-2 transition",
-                      c.swatch,
-                      color === c.name && "ring-2 ring-foreground",
-                    )}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="habit-frequency">Frequency</Label>
-            <Select
-              value={frequency}
-              onValueChange={(v) =>
-                setValue(
-                  "frequency_type",
-                  v as HabitFormValues["frequency_type"],
-                  { shouldDirty: true },
-                )
-              }
-            >
-              <SelectTrigger id="habit-frequency">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(FREQUENCY_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <Label htmlFor="habit-frequency">Frequency</Label>
+              <Select
+                value={frequency}
+                onValueChange={(v) =>
+                  setValue(
+                    "frequency_type",
+                    v as HabitFormValues["frequency_type"],
+                    { shouldDirty: true },
+                  )
+                }
+              >
+                <SelectTrigger id="habit-frequency" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(FREQUENCY_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {frequency === "weekdays" && (
@@ -218,17 +198,23 @@ export function HabitFormDialog({
           {frequency === "weekly" && (
             <div className="space-y-2">
               <Label htmlFor="habit-times">Times per week</Label>
-              <select
-                id="habit-times"
-                className="w-full rounded-full border bg-transparent px-3 py-2 text-base md:text-sm"
-                {...register("times")}
+              <Select
+                value={String(watch("times"))}
+                onValueChange={(value) =>
+                  setValue("times", Number(value), { shouldDirty: true })
+                }
               >
-                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                  <option key={n} value={n}>
-                    {n} {n === 1 ? "time" : "times"}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="habit-times" className="w-full rounded-full">
+                  <SelectValue placeholder="Select times per week" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} {n === 1 ? "time" : "times"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
@@ -244,6 +230,27 @@ export function HabitFormDialog({
               />
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>Color</Label>
+            <div className="flex flex-wrap sm:gap-1 gap-1.5 pt-1">
+              {HABIT_COLORS.map((c) => (
+                <button
+                  key={c.name}
+                  type="button"
+                  aria-label={`Color ${c.name}`}
+                  onClick={() =>
+                    setValue("color", c.name, { shouldDirty: true })
+                  }
+                  className={cn(
+                    "size-6 rounded-full ring-offset-2 transition",
+                    c.swatch,
+                    color === c.name && "ring-2 ring-foreground",
+                  )}
+                />
+              ))}
+            </div>
+          </div>
 
           <DialogFooter>
             <Button
