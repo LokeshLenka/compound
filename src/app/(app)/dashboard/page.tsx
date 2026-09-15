@@ -147,55 +147,6 @@ export default function DashboardPage() {
         )}
       </motion.p>
 
-      {/* Habits Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.05 }}
-        className="space-y-3"
-      >
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-xl bg-chart-1/12 text-chart-1">
-              <Repeat className="size-4" aria-hidden />
-            </span>
-            Habits
-          </CardTitle>
-          <Link
-            href="/habits"
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "h-8 rounded-full",
-            )}
-          >
-            All habits <ArrowRight className="size-3.5" />
-          </Link>
-        </div>
-
-        {dueHabits.length === 0 ? (
-          <Card>
-            <CardContent className="py-6 text-center text-sm text-muted-foreground">
-              Nothing due today. Enjoy it!
-            </CardContent>
-          </Card>
-        ) : (
-          <StaggerGrid className="grid gap-2 sm:grid-cols-2">
-            {habitItems.map((h, index) => (
-              <StaggerItem key={h.id}>
-                <HabitDashboardRow
-                  habit={h}
-                  done={todayLogs.has(h.id)}
-                  onToggle={() =>
-                    toggleLog.mutate({ habit_id: h.id, log_date: today })
-                  }
-                  index={index}
-                />
-              </StaggerItem>
-            ))}
-          </StaggerGrid>
-        )}
-      </motion.section>
-
       {/* Tasks Section */}
       <motion.section
         initial={{ opacity: 0, y: 12 }}
@@ -238,6 +189,55 @@ export default function DashboardPage() {
                       id: t.id,
                       status: done ? "done" : "todo",
                     })
+                  }
+                  index={index}
+                />
+              </StaggerItem>
+            ))}
+          </StaggerGrid>
+        )}
+      </motion.section>
+
+      {/* Habits Section */}
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.05 }}
+        className="space-y-3"
+      >
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <span className="grid size-8 place-items-center rounded-xl bg-chart-1/12 text-chart-1">
+              <Repeat className="size-4" aria-hidden />
+            </span>
+            Habits
+          </CardTitle>
+          <Link
+            href="/habits"
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "h-8 rounded-full",
+            )}
+          >
+            All habits <ArrowRight className="size-3.5" />
+          </Link>
+        </div>
+
+        {dueHabits.length === 0 ? (
+          <Card>
+            <CardContent className="py-6 text-center text-sm text-muted-foreground">
+              Nothing due today. Enjoy it!
+            </CardContent>
+          </Card>
+        ) : (
+          <StaggerGrid className="grid gap-2 sm:grid-cols-2">
+            {habitItems.map((h, index) => (
+              <StaggerItem key={h.id}>
+                <HabitDashboardRow
+                  habit={h}
+                  done={todayLogs.has(h.id)}
+                  onToggle={() =>
+                    toggleLog.mutate({ habit_id: h.id, log_date: today })
                   }
                   index={index}
                 />
@@ -441,8 +441,8 @@ export default function DashboardPage() {
                     "Untitled"}
                 </p>
                 <p className="text-xs text-muted-foreground tabular-nums">
-                  {journal.length} {journal.length === 1 ? "entry" : "entries"} ·{" "}
-                  {humanDate(journal[0].created_at, "MMM d")}
+                  {journal.length} {journal.length === 1 ? "entry" : "entries"}{" "}
+                  · {humanDate(journal[0].created_at, "MMM d")}
                 </p>
                 <Link
                   href="/journal"
