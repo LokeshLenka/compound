@@ -55,7 +55,7 @@ export default function DiaryPage() {
   const [weather, setWeather] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [dirty, setDirty] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const [editing, setEditing] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
 
@@ -218,7 +218,7 @@ export default function DiaryPage() {
         </div>
 
         {/* Tags */}
-        <div className="space-y-2.5">
+        <div className="space-y-2.5 pb-10">
           <Label
             htmlFor="diary-tags"
             className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
@@ -234,25 +234,6 @@ export default function DiaryPage() {
               noteDirty();
             }}
           />
-        </div>
-
-        {/* Sound toggle */}
-        <div className="space-y-2.5">
-          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Sound
-          </Label>
-          <button
-            type="button"
-            onClick={() => setSoundEnabled((s) => !s)}
-            className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {soundEnabled ? (
-              <Volume2 className="size-4" />
-            ) : (
-              <VolumeX className="size-4" />
-            )}
-            {soundEnabled ? "On" : "Off"}
-          </button>
         </div>
       </div>
     );
@@ -347,6 +328,25 @@ export default function DiaryPage() {
             {/* Desktop sidebar */}
             <aside className="hidden shrink-0 border-l p-4 sm:p-5 lg:block lg:w-72 lg:overflow-y-auto">
               {sidebarContent}
+
+              {/* Sound toggle — desktop only */}
+              <div className="mt-5 space-y-2.5">
+                <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Sound
+                </Label>
+                <button
+                  type="button"
+                  onClick={() => setSoundEnabled((s) => !s)}
+                  className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {soundEnabled ? (
+                    <Volume2 className="size-4" />
+                  ) : (
+                    <VolumeX className="size-4" />
+                  )}
+                  {soundEnabled ? "On" : "Off"}
+                </button>
+              </div>
             </aside>
           </div>
 

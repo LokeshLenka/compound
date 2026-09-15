@@ -257,7 +257,7 @@ function NotesPageContent() {
         </div>
 
         {/* Tags */}
-        <div className="space-y-2.5">
+        <div className="space-y-2.5 pb-10">
           <Label
             htmlFor="note-tags"
             className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
@@ -274,47 +274,6 @@ function NotesPageContent() {
             }}
           />
         </div>
-
-        {/* Keyboard toggle */}
-        <div className="space-y-2.5">
-          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Keyboard
-          </Label>
-          <button
-            type="button"
-            onClick={() => setKeyboardVisible((v) => !v)}
-            className={cn(
-              "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
-              keyboardVisible
-                ? "border-primary bg-primary/10 text-primary"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Keyboard className="size-4" />
-            {keyboardVisible ? "Visible" : "Hidden"}
-          </button>
-        </div>
-
-        {/* Sound toggle — only when keyboard is visible */}
-        {keyboardVisible && (
-          <div className="space-y-2.5">
-            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Sound
-            </Label>
-            <button
-              type="button"
-              onClick={() => setSoundEnabled((s) => !s)}
-              className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {soundEnabled ? (
-                <Volume2 className="size-4" />
-              ) : (
-                <VolumeX className="size-4" />
-              )}
-              {soundEnabled ? "On" : "Off"}
-            </button>
-          </div>
-        )}
       </div>
     );
 
@@ -404,6 +363,47 @@ function NotesPageContent() {
           {/* Desktop sidebar */}
           <aside className="hidden shrink-0 border-l p-4 sm:p-5 lg:block lg:w-72 lg:overflow-y-auto">
             {sidebarContent}
+
+            {/* Keyboard toggle — desktop only */}
+            <div className="mt-5 space-y-2.5">
+              <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Keyboard
+              </Label>
+              <button
+                type="button"
+                onClick={() => setKeyboardVisible((v) => !v)}
+                className={cn(
+                  "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                  keyboardVisible
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <Keyboard className="size-4" />
+                {keyboardVisible ? "Visible" : "Hidden"}
+              </button>
+            </div>
+
+            {/* Sound toggle — desktop only, only when keyboard is visible */}
+            {keyboardVisible && (
+              <div className="mt-5 space-y-2.5">
+                <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Sound
+                </Label>
+                <button
+                  type="button"
+                  onClick={() => setSoundEnabled((s) => !s)}
+                  className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {soundEnabled ? (
+                    <Volume2 className="size-4" />
+                  ) : (
+                    <VolumeX className="size-4" />
+                  )}
+                  {soundEnabled ? "On" : "Off"}
+                </button>
+              </div>
+            )}
           </aside>
         </div>
 
