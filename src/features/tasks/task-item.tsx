@@ -187,7 +187,7 @@ export function TaskRow({
               </Button>
             }
           />
-          <SheetContent side="bottom" className="p-0">
+          <SheetContent side="bottom" className="p-0" showCloseButton={false}>
             <div className="px-4 py-2 space-y-2">
               <motion.button
                 onClick={() => {
