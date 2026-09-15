@@ -140,7 +140,7 @@ export function HabitFormDialog({
               <Label htmlFor="habit-emoji">Emoji</Label>
               <Input
                 id="habit-emoji"
-                className="text-center"
+                className="text-center max-h-8"
                 maxLength={8}
                 {...register("emoji")}
               />
