@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   waterSettingsSchema,
   type WaterSettingsFormValues,
-} from "@/lib/schemas"
+} from "@/lib/schemas";
 import {
   useWaterSettings,
   useUpdateWaterSettings,
-} from "@/features/water/use-water"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+} from "@/features/water/use-water";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -21,24 +21,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 export function WaterSettingsDialog({
   open,
   onOpenChange,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const { data: settings } = useWaterSettings()
-  const update = useUpdateWaterSettings()
+  const { data: settings } = useWaterSettings();
+  const update = useUpdateWaterSettings();
 
   const {
     register,
@@ -54,9 +54,9 @@ export function WaterSettingsDialog({
       water_unit: "ml",
       water_quick_amounts: [200, 400, 800],
     },
-  })
+  });
 
-  const unit = watch("water_unit")
+  const unit = watch("water_unit");
 
   useEffect(() => {
     if (open && settings) {
@@ -67,18 +67,18 @@ export function WaterSettingsDialog({
           settings.water_quick_amounts.length === 3
             ? settings.water_quick_amounts
             : [200, 400, 800],
-      })
+      });
     }
-  }, [open, settings, reset])
+  }, [open, settings, reset]);
 
   async function onSubmit(values: WaterSettingsFormValues) {
-    await update.mutateAsync(values)
-    onOpenChange(false)
+    await update.mutateAsync(values);
+    onOpenChange(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="sm:max-w-sm" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Water settings</DialogTitle>
           <DialogDescription>
@@ -96,14 +96,20 @@ export function WaterSettingsDialog({
                 min={100}
                 max={10000}
                 {...register("water_goal_ml")}
-                aria-describedby={errors.water_goal_ml ? "water-goal-err" : undefined}
+                aria-describedby={
+                  errors.water_goal_ml ? "water-goal-err" : undefined
+                }
               />
               <Select
                 value={unit}
                 onValueChange={(v) =>
-                  setValue("water_unit", v as WaterSettingsFormValues["water_unit"], {
-                    shouldValidate: true,
-                  })
+                  setValue(
+                    "water_unit",
+                    v as WaterSettingsFormValues["water_unit"],
+                    {
+                      shouldValidate: true,
+                    },
+                  )
                 }
               >
                 <SelectTrigger aria-label="Unit" className="w-24">
@@ -141,7 +147,11 @@ export function WaterSettingsDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
@@ -151,5 +161,5 @@ export function WaterSettingsDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -138,7 +138,7 @@ export function TransactionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className={"pl-2"}>
             {isEdit ? "Edit transaction" : "Add transaction"}
@@ -287,7 +287,7 @@ export function CategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit category" : "New category"}</DialogTitle>
         </DialogHeader>
@@ -433,7 +433,7 @@ export function BudgetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit budget" : "New budget"}</DialogTitle>
         </DialogHeader>

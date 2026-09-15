@@ -1,52 +1,52 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { habitSchema, type HabitFormValues } from "@/lib/schemas"
-import { HABIT_COLORS } from "@/lib/colors"
-import type { Habit } from "@/lib/types"
-import { cn } from "@/lib/utils"
-import { useCreateHabit, useUpdateHabit } from "@/features/habits/use-habits"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { habitSchema, type HabitFormValues } from "@/lib/schemas";
+import { HABIT_COLORS } from "@/lib/colors";
+import type { Habit } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { useCreateHabit, useUpdateHabit } from "@/features/habits/use-habits";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
-const WEEKDAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+const WEEKDAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 const FREQUENCY_LABELS: Record<string, string> = {
   daily: "Daily",
   weekdays: "Specific days",
   weekly: "X times per week",
   every_n_days: "Every N days",
-}
+};
 
 export function HabitFormDialog({
   open,
   onOpenChange,
   habit,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  habit?: Habit | null
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  habit?: Habit | null;
 }) {
-  const createHabit = useCreateHabit()
-  const updateHabit = useUpdateHabit()
-  const isEdit = Boolean(habit)
+  const createHabit = useCreateHabit();
+  const updateHabit = useUpdateHabit();
+  const isEdit = Boolean(habit);
 
   const {
     register,
@@ -66,7 +66,7 @@ export function HabitFormDialog({
       days: [1, 2, 3, 4, 5],
       every: 2,
     },
-  })
+  });
 
   useEffect(() => {
     if (open) {
@@ -90,34 +90,34 @@ export function HabitFormDialog({
               days: [1, 2, 3, 4, 5],
               every: 2,
             },
-      )
+      );
     }
-  }, [open, habit, reset])
+  }, [open, habit, reset]);
 
-  const frequency = watch("frequency_type")
-  const days = watch("days")
-  const color = watch("color")
+  const frequency = watch("frequency_type");
+  const days = watch("days");
+  const color = watch("color");
 
   async function onSubmit(values: HabitFormValues) {
     if (isEdit && habit) {
-      await updateHabit.mutateAsync({ id: habit.id, values })
+      await updateHabit.mutateAsync({ id: habit.id, values });
     } else {
-      await createHabit.mutateAsync(values)
+      await createHabit.mutateAsync(values);
     }
-    onOpenChange(false)
+    onOpenChange(false);
   }
 
   function toggleDay(d: number) {
-    const current = days ?? []
+    const current = days ?? [];
     const next = current.includes(d)
       ? current.filter((x) => x !== d)
-      : [...current, d].sort()
-    setValue("days", next, { shouldDirty: true })
+      : [...current, d].sort();
+    setValue("days", next, { shouldDirty: true });
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit habit" : "New habit"}</DialogTitle>
         </DialogHeader>
@@ -153,7 +153,9 @@ export function HabitFormDialog({
                     key={c.name}
                     type="button"
                     aria-label={`Color ${c.name}`}
-                    onClick={() => setValue("color", c.name, { shouldDirty: true })}
+                    onClick={() =>
+                      setValue("color", c.name, { shouldDirty: true })
+                    }
                     className={cn(
                       "size-6 rounded-full ring-offset-2 transition",
                       c.swatch,
@@ -258,5 +260,5 @@ export function HabitFormDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

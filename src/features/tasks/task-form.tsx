@@ -1,30 +1,30 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { taskSchema, splitTags, type TaskFormValues } from "@/lib/schemas"
-import type { Task } from "@/lib/types"
-import { useCreateTask, useUpdateTask } from "@/features/tasks/use-tasks"
-import { PRIORITY_META } from "@/features/tasks/meta"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { taskSchema, splitTags, type TaskFormValues } from "@/lib/schemas";
+import type { Task } from "@/lib/types";
+import { useCreateTask, useUpdateTask } from "@/features/tasks/use-tasks";
+import { PRIORITY_META } from "@/features/tasks/meta";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 
 export function TaskFormDialog({
   open,
@@ -32,14 +32,14 @@ export function TaskFormDialog({
   task,
   defaultStatus,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  task?: Task | null
-  defaultStatus?: TaskFormValues["status"]
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  task?: Task | null;
+  defaultStatus?: TaskFormValues["status"];
 }) {
-  const createTask = useCreateTask()
-  const updateTask = useUpdateTask()
-  const isEdit = Boolean(task)
+  const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+  const isEdit = Boolean(task);
 
   const {
     register,
@@ -58,9 +58,9 @@ export function TaskFormDialog({
       due_date: null,
       tags: [],
     },
-  })
+  });
 
-  const [tagsInput, setTagsInput] = useState("")
+  const [tagsInput, setTagsInput] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -82,32 +82,35 @@ export function TaskFormDialog({
               due_date: null,
               tags: [],
             },
-      )
-      setTagsInput(task?.tags?.join(", ") ?? "")
+      );
+      setTagsInput(task?.tags?.join(", ") ?? "");
     }
-  }, [open, task, reset, defaultStatus])
+  }, [open, task, reset, defaultStatus]);
 
-  const priority = watch("priority")
-  const status = watch("status")
+  const priority = watch("priority");
+  const status = watch("status");
 
   async function onSubmit(values: TaskFormValues) {
-    const tags = splitTags(tagsInput)
+    const tags = splitTags(tagsInput);
     const payload = {
       ...values,
       tags,
       due_date: values.due_date || null,
-    }
+    };
     if (isEdit && task) {
-      await updateTask.mutateAsync({ id: task.id, patch: payload as TaskFormValues })
+      await updateTask.mutateAsync({
+        id: task.id,
+        patch: payload as TaskFormValues,
+      });
     } else {
-      await createTask.mutateAsync(payload)
+      await createTask.mutateAsync(payload);
     }
-    onOpenChange(false)
+    onOpenChange(false);
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit task" : "New task"}</DialogTitle>
         </DialogHeader>
@@ -127,7 +130,12 @@ export function TaskFormDialog({
 
           <div className="space-y-2">
             <Label htmlFor="task-notes">Notes</Label>
-            <Textarea id="task-notes" rows={2} placeholder="Optional details…" {...register("notes")} />
+            <Textarea
+              id="task-notes"
+              rows={2}
+              placeholder="Optional details…"
+              {...register("notes")}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -135,7 +143,11 @@ export function TaskFormDialog({
               <Label>Priority</Label>
               <Select
                 value={priority}
-                onValueChange={(v) => setValue("priority", v as TaskFormValues["priority"], { shouldDirty: true })}
+                onValueChange={(v) =>
+                  setValue("priority", v as TaskFormValues["priority"], {
+                    shouldDirty: true,
+                  })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -154,7 +166,11 @@ export function TaskFormDialog({
                 <Label>Status</Label>
                 <Select
                   value={status}
-                  onValueChange={(v) => setValue("status", v as TaskFormValues["status"], { shouldDirty: true })}
+                  onValueChange={(v) =>
+                    setValue("status", v as TaskFormValues["status"], {
+                      shouldDirty: true,
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -170,11 +186,7 @@ export function TaskFormDialog({
 
           <div className="space-y-2">
             <Label htmlFor="task-due">Due date</Label>
-            <Input
-              id="task-due"
-              type="date"
-              {...register("due_date")}
-            />
+            <Input id="task-due" type="date" {...register("due_date")} />
           </div>
 
           <div className="space-y-2">
@@ -202,5 +214,5 @@ export function TaskFormDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

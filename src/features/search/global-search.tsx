@@ -1,15 +1,28 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import Link from "next/link"
-import { FileText, ListChecks, Repeat, BookOpen, Search, NotebookPen, Wallet } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useGlobalSearch } from "./use-global-search"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import { Spinner } from "@/components/ui/spinner"
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  FileText,
+  ListChecks,
+  Repeat,
+  BookOpen,
+  Search,
+  NotebookPen,
+  Wallet,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useGlobalSearch } from "./use-global-search";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 const KIND_ICONS = {
   habit: Repeat,
@@ -18,34 +31,37 @@ const KIND_ICONS = {
   diary: BookOpen,
   journal: NotebookPen,
   expense: Wallet,
-}
+};
 
 export function GlobalSearch({ iconOnly = false }: { iconOnly?: boolean }) {
-  const [open, setOpen] = useState(false)
-  const [q, setQ] = useState("")
-  const router = useRouter()
-  const { data, isFetching } = useGlobalSearch(open ? q : "")
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const router = useRouter();
+  const { data, isFetching } = useGlobalSearch(open ? q : "");
 
-  const openSearch = () => setOpen(true)
+  const openSearch = () => setOpen(true);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault()
-        setOpen((o) => !o)
+        e.preventDefault();
+        setOpen((o) => !o);
       }
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [])
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
-  const total = data?.reduce((n, g) => n + g.results.length, 0) ?? 0
+  const total = data?.reduce((n, g) => n + g.results.length, 0) ?? 0;
 
   return (
     <>
       <Button
         variant="outline"
-        className={cn("text-muted-foreground", iconOnly && "size-11 rounded-full px-0")}
+        className={cn(
+          "text-muted-foreground",
+          iconOnly && "size-11 rounded-full px-0",
+        )}
         aria-label="Search (Ctrl+K)"
         title="Search (Ctrl+K)"
         onClick={openSearch}
@@ -54,7 +70,9 @@ export function GlobalSearch({ iconOnly = false }: { iconOnly?: boolean }) {
         {!iconOnly && (
           <>
             <span className="hidden lg:inline">Search&hellip;</span>
-            <kbd className="ml-auto hidden rounded border px-1.5 text-[10px] md:inline">Ctrl&nbsp;K</kbd>
+            <kbd className="ml-auto hidden rounded border px-1.5 text-[10px] md:inline">
+              Ctrl&nbsp;K
+            </kbd>
           </>
         )}
       </Button>
@@ -62,11 +80,14 @@ export function GlobalSearch({ iconOnly = false }: { iconOnly?: boolean }) {
       <Dialog
         open={open}
         onOpenChange={(o) => {
-          setOpen(o)
-          if (!o) setQ("")
+          setOpen(o);
+          if (!o) setQ("");
         }}
       >
-        <DialogContent className="top-[15%] max-w-xl gap-0 p-0">
+        <DialogContent
+          className="top-[15%] max-w-xl gap-0 p-0"
+          showCloseButton={false}
+        >
           <DialogHeader className="sr-only">
             <DialogTitle>Search</DialogTitle>
           </DialogHeader>
@@ -98,7 +119,7 @@ export function GlobalSearch({ iconOnly = false }: { iconOnly?: boolean }) {
                     {group.label}
                   </p>
                   {group.results.map((r) => {
-                    const Icon = KIND_ICONS[r.kind]
+                    const Icon = KIND_ICONS[r.kind];
                     return (
                       <Link
                         key={`${r.kind}-${r.id}`}
@@ -112,10 +133,12 @@ export function GlobalSearch({ iconOnly = false }: { iconOnly?: boolean }) {
                         <Icon className="size-4 shrink-0 text-muted-foreground" />
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm">{r.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{r.subtitle}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {r.subtitle}
+                          </p>
                         </div>
                       </Link>
-                    )
+                    );
                   })}
                 </div>
               ))
@@ -138,5 +161,5 @@ export function GlobalSearch({ iconOnly = false }: { iconOnly?: boolean }) {
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }
