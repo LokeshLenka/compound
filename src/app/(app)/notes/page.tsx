@@ -1,101 +1,439 @@
-"use client"
+"use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react"
-import { useSearchParams } from "next/navigation"
-import { Plus, Pin, Search, FileText } from "lucide-react"
-import { useNotes, useTogglePin } from "@/features/notes/use-notes"
-import { NoteFormDialog } from "@/features/notes/note-form"
-import { CreateFab } from "@/components/create-fab"
-import type { Note } from "@/lib/types"
-import { format } from "date-fns"
-import { Button } from "@/components/ui/button"
-import { PageHeader } from "@/components/page-header"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  Plus,
+  Pin,
+  Search,
+  FileText,
+  X,
+  Save,
+  Trash2,
+  PenLine,
+  SlidersHorizontal,
+  Volume2,
+  VolumeX,
+  Keyboard,
+} from "lucide-react";
+import {
+  useNotes,
+  useSaveNote,
+  useDeleteNote,
+  useTogglePin,
+} from "@/features/notes/use-notes";
+import { MarkdownEditor } from "@/features/notes/markdown-editor";
+import { splitTags } from "@/lib/schemas";
+import { CreateFab } from "@/components/create-fab";
+import type { Note } from "@/lib/types";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import { Component as VintageKeyboard } from "@/components/ui/vintage-keyboard";
+
+const AUTO_SAVE_DELAY = 2000;
 
 function excerpt(content: string, len = 160): string {
   return content
     .replace(/[#>*`\[\]()!~\-]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .slice(0, len)
+    .slice(0, len);
 }
 
 export default function NotesPage() {
   return (
-    <Suspense fallback={<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {[0, 1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-40 w-full" />
-      ))}
-    </div>}>
+    <Suspense
+      fallback={
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-40 w-full" />
+          ))}
+        </div>
+      }
+    >
       <NotesPageContent />
     </Suspense>
-  )
+  );
 }
 
 function NotesPageContent() {
-  const searchParams = useSearchParams()
-  const { data: notes, isLoading } = useNotes()
-  const togglePin = useTogglePin()
+  const searchParams = useSearchParams();
+  const { data: notes, isLoading } = useNotes();
+  const saveNote = useSaveNote();
+  const deleteNote = useDeleteNote();
+  const togglePin = useTogglePin();
 
-  const [query, setQuery] = useState(searchParams.get("q") ?? "")
-  const [tagFilter, setTagFilter] = useState<string | null>(null)
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Note | null>(null)
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+
+  const [editing, setEditing] = useState(false);
+  const [activeNote, setActiveNote] = useState<Note | null>(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
+  const [isPinned, setIsPinned] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
+
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedRef = useRef<string>("");
 
   useEffect(() => {
-    const q = searchParams.get("q")
+    const q = searchParams.get("q");
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (q) setQuery(q)
-  }, [searchParams])
+    if (q) setQuery(q);
+  }, [searchParams]);
 
   useEffect(() => {
     if (searchParams.get("create")) {
-      /* eslint-disable react-hooks/set-state-in-effect */ // open create dialog from ?create=1
-      setEditing(null)
-      setFormOpen(true)
-      /* eslint-enable react-hooks/set-state-in-effect */
+      openEditor(null);
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   const allTags = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const n of notes ?? []) for (const t of n.tags) counts.set(t, (counts.get(t) ?? 0) + 1)
-    return [...counts.entries()].sort((a, b) => b[1] - a[1])
-  }, [notes])
+    const counts = new Map<string, number>();
+    for (const n of notes ?? [])
+      for (const t of n.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  }, [notes]);
 
   const visible = useMemo(() => {
-    let list = notes ?? []
-    if (tagFilter) list = list.filter((n) => n.tags.includes(tagFilter))
+    let list = notes ?? [];
+    if (tagFilter) list = list.filter((n) => n.tags.includes(tagFilter));
     if (query.trim()) {
-      const q = query.toLowerCase()
+      const q = query.toLowerCase();
       list = list.filter(
         (n) =>
           n.title.toLowerCase().includes(q) ||
           n.content.toLowerCase().includes(q) ||
           n.tags.some((t) => t.includes(q)),
-      )
+      );
     }
-    return list
-  }, [notes, query, tagFilter])
+    return list;
+  }, [notes, query, tagFilter]);
 
   const firstMatchId = useMemo(() => {
-    if (!query.trim()) return null
-    const q = query.toLowerCase()
-    return visible.find((n) => n.title.toLowerCase().includes(q))?.id ?? null
-  }, [visible, query])
+    if (!query.trim()) return null;
+    const q = query.toLowerCase();
+    return visible.find((n) => n.title.toLowerCase().includes(q))?.id ?? null;
+  }, [visible, query]);
 
   useEffect(() => {
-    if (!firstMatchId) return
-    const id = firstMatchId
+    if (!firstMatchId) return;
+    const id = firstMatchId;
     requestAnimationFrame(() => {
       document
         .getElementById(`note-${id}`)
-        ?.scrollIntoView({ behavior: "smooth", block: "center" })
-    })
-  }, [firstMatchId])
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [firstMatchId]);
+
+  /* ── editor helpers ── */
+
+  const snapshot = useMemo(
+    () => JSON.stringify({ title, content, tagsInput, isPinned }),
+    [title, content, tagsInput, isPinned],
+  );
+
+  const doSave = useCallback(async () => {
+    await saveNote.mutateAsync({
+      id: activeNote?.id,
+      values: {
+        title: title || "Untitled",
+        content,
+        tags: splitTags(tagsInput || ""),
+      },
+    });
+    lastSavedRef.current = snapshot;
+    setDirty(false);
+  }, [activeNote, title, content, tagsInput, snapshot, saveNote]);
+
+  useEffect(() => {
+    if (!dirty || snapshot === lastSavedRef.current) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      void doSave();
+    }, AUTO_SAVE_DELAY);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, [dirty, snapshot, doSave]);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, []);
+
+  function markDirty() {
+    setDirty(true);
+  }
+
+  function openEditor(note: Note | null) {
+    setActiveNote(note);
+    setTitle(note?.title ?? "");
+    setContent(note?.content ?? "");
+    setTagsInput(note?.tags?.join(", ") ?? "");
+    setIsPinned(note?.is_pinned ?? false);
+    setDirty(false);
+    lastSavedRef.current = JSON.stringify({
+      title: note?.title ?? "",
+      content: note?.content ?? "",
+      tagsInput: note?.tags?.join(", ") ?? "",
+      isPinned: note?.is_pinned ?? false,
+    });
+    setEditing(true);
+    setTimeout(() => document.getElementById("note-title")?.focus(), 50);
+  }
+
+  function closeEditor() {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    if (dirty && snapshot !== lastSavedRef.current) {
+      void doSave();
+    }
+    setEditing(false);
+  }
+
+  async function handleSave() {
+    await saveNote.mutateAsync({
+      id: activeNote?.id,
+      values: {
+        title: title || "Untitled",
+        content,
+        tags: splitTags(tagsInput || ""),
+      },
+    });
+    lastSavedRef.current = snapshot;
+    setDirty(false);
+  }
+
+  /* ── full-screen editor ── */
+
+  if (editing) {
+    const sidebarContent = (
+      <div className="space-y-5">
+        {/* Pin */}
+        <div className="space-y-2.5">
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Pin
+          </Label>
+          <button
+            type="button"
+            onClick={() => {
+              setIsPinned((p) => !p);
+              markDirty();
+            }}
+            className={cn(
+              "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+              isPinned
+                ? "border-primary bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Pin className={cn("size-4", isPinned && "fill-current")} />
+            {isPinned ? "Pinned" : "Pin this note"}
+          </button>
+        </div>
+
+        {/* Tags */}
+        <div className="space-y-2.5">
+          <Label
+            htmlFor="note-tags"
+            className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+          >
+            Tags
+          </Label>
+          <Input
+            id="note-tags"
+            placeholder="ideas, work, journal"
+            value={tagsInput}
+            onChange={(e) => {
+              setTagsInput(e.target.value);
+              markDirty();
+            }}
+          />
+        </div>
+
+        {/* Keyboard toggle */}
+        <div className="space-y-2.5">
+          <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Keyboard
+          </Label>
+          <button
+            type="button"
+            onClick={() => setKeyboardVisible((v) => !v)}
+            className={cn(
+              "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+              keyboardVisible
+                ? "border-primary bg-primary/10 text-primary"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Keyboard className="size-4" />
+            {keyboardVisible ? "Visible" : "Hidden"}
+          </button>
+        </div>
+
+        {/* Sound toggle — only when keyboard is visible */}
+        {keyboardVisible && (
+          <div className="space-y-2.5">
+            <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Sound
+            </Label>
+            <button
+              type="button"
+              onClick={() => setSoundEnabled((s) => !s)}
+              className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {soundEnabled ? (
+                <Volume2 className="size-4" />
+              ) : (
+                <VolumeX className="size-4" />
+              )}
+              {soundEnabled ? "On" : "Off"}
+            </button>
+          </div>
+        )}
+      </div>
+    );
+
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+        {/* Header */}
+        <header className="flex shrink-0 items-center justify-between border-b px-4 py-3 sm:px-6">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={closeEditor}
+            className="gap-1.5"
+          >
+            <X className="size-4" />
+            Close
+          </Button>
+          <h2 className="text-sm font-medium text-muted-foreground truncate">
+            {activeNote?.title || "New note"}
+            {dirty && (
+              <span className="ml-2 text-xs text-orange-500">Unsaved</span>
+            )}
+          </h2>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              onClick={() => setMobileSettingsOpen(true)}
+            >
+              <SlidersHorizontal className="size-4" />
+            </Button>
+            {activeNote && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => {
+                  void deleteNote.mutate(activeNote.id);
+                  setEditing(false);
+                }}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            )}
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={saveNote.isPending}
+            >
+              <Save className="mr-1 size-3" />
+              Save
+            </Button>
+          </div>
+        </header>
+
+        {/* Body */}
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+          {/* Writing area */}
+          <div className="flex flex-1 flex-col overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <Input
+              id="note-title"
+              placeholder="Give your note a title…"
+              className="text-xl font-semibold border-0 px-0 shadow-none focus-visible:ring-0 h-auto py-1"
+              autoFocus
+              value={title}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                markDirty();
+              }}
+            />
+            <div className="mt-2 flex-1 min-h-[50vh] lg:min-h-0">
+              <MarkdownEditor
+                key={activeNote?.id ?? "new"}
+                content={activeNote?.content ?? ""}
+                onChange={(md) => {
+                  setContent(md);
+                  markDirty();
+                }}
+                placeholder="Write your note…"
+              />
+            </div>
+          </div>
+
+          {/* Desktop sidebar */}
+          <aside className="hidden shrink-0 border-l p-4 sm:p-5 lg:block lg:w-72 lg:overflow-y-auto">
+            {sidebarContent}
+          </aside>
+        </div>
+
+        {/* Keyboard: desktop only */}
+        {keyboardVisible && (
+          <div className="hidden max-h-[45vh] overflow-hidden border-t lg:block">
+            <div className="[&>.kb-viewport]:!min-h-0 [&>.kb-viewport]:h-full">
+              <VintageKeyboard muted={!soundEnabled} />
+            </div>
+          </div>
+        )}
+
+        {/* Mobile settings sheet */}
+        <Sheet open={mobileSettingsOpen} onOpenChange={setMobileSettingsOpen}>
+          <SheetContent
+            side="bottom"
+            className="max-h-[80vh] overflow-y-auto px-4"
+            showCloseButton={false}
+          >
+            <SheetHeader>
+              <SheetTitle>Settings</SheetTitle>
+            </SheetHeader>
+            {sidebarContent}
+          </SheetContent>
+        </Sheet>
+      </div>
+    );
+  }
+
+  /* ── overview ── */
 
   return (
     <div className="space-y-5">
@@ -104,10 +442,7 @@ function NotesPageContent() {
         actions={
           <Button
             className="hidden md:inline-flex"
-            onClick={() => {
-              setEditing(null)
-              setFormOpen(true)
-            }}
+            onClick={() => openEditor(null)}
           >
             <Plus className="mr-1 size-4" /> New note
           </Button>
@@ -158,18 +493,9 @@ function NotesPageContent() {
                 <FileText className="size-6" aria-hidden />
               </span>
             </p>
-            <p className="text-sm">No notes yet{query || tagFilter ? " match these filters" : ""}.</p>
-            {!query && !tagFilter && (
-              <Button
-                className="mt-4 gap-1.5"
-                onClick={() => {
-                  setEditing(null)
-                  setFormOpen(true)
-                }}
-              >
-                <Plus className="size-4" /> Write your first note
-              </Button>
-            )}
+            <p className="text-sm">
+              No notes yet{query || tagFilter ? " match these filters" : ""}.
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -185,10 +511,7 @@ function NotesPageContent() {
             >
               <CardContent
                 className="space-y-2 p-4"
-                onClick={() => {
-                  setEditing(n)
-                  setFormOpen(true)
-                }}
+                onClick={() => openEditor(n)}
               >
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="truncate font-semibold">
@@ -208,12 +531,15 @@ function NotesPageContent() {
                       className="size-9"
                       aria-label={n.is_pinned ? "Unpin" : "Pin"}
                       onClick={(e) => {
-                        e.stopPropagation()
-                        togglePin.mutate({ id: n.id, pinned: !n.is_pinned })
+                        e.stopPropagation();
+                        togglePin.mutate({ id: n.id, pinned: !n.is_pinned });
                       }}
                     >
                       <Pin
-                        className={cn("size-3.5", n.is_pinned && "fill-current")}
+                        className={cn(
+                          "size-3.5",
+                          n.is_pinned && "fill-current",
+                        )}
                       />
                     </Button>
                   </div>
@@ -241,19 +567,7 @@ function NotesPageContent() {
         </div>
       )}
 
-      <NoteFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        note={editing}
-      />
-
-      <CreateFab
-        label="New note"
-        onClick={() => {
-          setEditing(null)
-          setFormOpen(true)
-        }}
-      />
+      <CreateFab label="New note" onClick={() => openEditor(null)} />
     </div>
-  )
+  );
 }
