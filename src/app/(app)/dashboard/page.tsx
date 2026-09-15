@@ -1,9 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "motion/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Droplet,
@@ -26,7 +25,7 @@ import { useTasks, useSetTaskStatus } from "@/features/tasks/use-tasks";
 import { useNotes } from "@/features/notes/use-notes";
 import { useDiaryEntries } from "@/features/diary/use-diary";
 import { useJournalEntries } from "@/features/journaling/use-journaling";
-import { useTransactions } from "@/features/expenses/use-expenses";
+import { useTransactions, useCategories } from "@/features/expenses/use-expenses";
 import {
   useWaterLogs,
   useWaterSettings,
@@ -35,14 +34,17 @@ import {
 import { isDueToday } from "@/lib/habits";
 import { colorSoft } from "@/lib/colors";
 import { todayISO, humanDate } from "@/lib/dates";
-import { totalMl, formatAmount, progressPct, remainingMl } from "@/lib/water";
+import { totalMl, formatAmount, progressPct } from "@/lib/water";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StaggerGrid, StaggerItem } from "@/components/stagger-grid";
-import { CreateFab } from "@/components/create-fab";
+import { DashboardQuickAddMobile, DashboardQuickAddDesktop } from "@/components/dashboard-quick-add";
+import { TaskFormDialog } from "@/features/tasks/task-form";
+import { HabitFormDialog } from "@/features/habits/habit-form";
+import { TransactionDialog } from "@/features/expenses/expense-forms";
 
 function greeting(now = new Date()): string {
   const h = now.getHours();
@@ -53,7 +55,6 @@ function greeting(now = new Date()): string {
 }
 
 export default function DashboardPage() {
-  const router = useRouter();
   const { data: habits = [] } = useHabits();
   const { data: allLogs = [] } = useHabitLogs();
   const { data: tasks = [] } = useTasks();
@@ -61,11 +62,14 @@ export default function DashboardPage() {
   const { data: diary } = useDiaryEntries();
   const { data: journal = [] } = useJournalEntries();
   const { data: transactions = [] } = useTransactions();
+  const { data: categories = [] } = useCategories();
   const { data: waterLogs = [] } = useWaterLogs();
   const { data: waterSettings } = useWaterSettings();
   const toggleLog = useToggleLog();
   const setStatus = useSetTaskStatus();
   const addWater = useAddWater();
+
+  const [quickAddOpen, setQuickAddOpen] = useState<"task" | "habit" | "transaction" | null>(null);
 
   const today = todayISO();
   const now = new Date();
@@ -128,7 +132,14 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Dashboard" />
+      <PageHeader
+        title="Dashboard"
+        actions={
+          <div className="hidden md:block">
+            <DashboardQuickAddDesktop onSelect={(type) => setQuickAddOpen(type)} />
+          </div>
+        }
+      />
 
       <motion.p
         initial={{ opacity: 0, y: -8 }}
@@ -511,9 +522,22 @@ export default function DashboardPage() {
         </Card>
       </motion.section>
 
-      <CreateFab
-        label="New item"
-        onClick={() => router.push("/tasks?create=1")}
+      <div className="md:hidden">
+        <DashboardQuickAddMobile onSelect={(type) => setQuickAddOpen(type)} />
+      </div>
+
+      <TaskFormDialog
+        open={quickAddOpen === "task"}
+        onOpenChange={(o) => { if (!o) setQuickAddOpen(null) }}
+      />
+      <HabitFormDialog
+        open={quickAddOpen === "habit"}
+        onOpenChange={(o) => { if (!o) setQuickAddOpen(null) }}
+      />
+      <TransactionDialog
+        open={quickAddOpen === "transaction"}
+        onOpenChange={(o) => { if (!o) setQuickAddOpen(null) }}
+        categories={categories}
       />
     </div>
   );
