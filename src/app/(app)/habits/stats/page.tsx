@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import {
   ResponsiveContainer,
@@ -17,6 +17,8 @@ import {
   Flame,
   Target,
   ArrowLeft,
+  ChevronDown,
+  Grid3X3,
 } from "lucide-react"
 import { useHabits, useHabitLogs } from "@/features/habits/use-habits"
 import { HabitCompletionsChart } from "@/features/habits/habit-chart"
@@ -27,7 +29,14 @@ import {
   weekCount,
   isDueOnDate,
 } from "@/lib/habits"
-import { lastNDates, monthKey, monthLabel, lastMonthsISO, todayISO, humanDate } from "@/lib/dates"
+import {
+  lastNDates,
+  monthKey,
+  monthLabel,
+  lastMonthsISO,
+  todayISO,
+  humanDate,
+} from "@/lib/dates"
 import { colorSoft } from "@/lib/colors"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -35,6 +44,8 @@ import { PageHeader } from "@/components/page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import type { Habit } from "@/lib/types"
+
+const PERIODS = [7, 30, 90] as const
 
 export default function HabitStatsPage() {
   const { data: habits = [] } = useHabits()
@@ -68,7 +79,9 @@ export default function HabitStatsPage() {
   }, [allLogs])
 
   const avgRate = useMemo(() => {
-    const rates = habits.map((h) => completionRate(h, logsByHabit.get(h.id) ?? []))
+    const rates = habits.map((h) =>
+      completionRate(h, logsByHabit.get(h.id) ?? []),
+    )
     if (rates.length === 0) return 0
     return Math.round((rates.reduce((a, b) => a + b, 0) / rates.length) * 100)
   }, [habits, logsByHabit])
@@ -86,6 +99,7 @@ export default function HabitStatsPage() {
           dates: logsByHabit.get(h.id) ?? [],
           current: currentStreak(h, logsByHabit.get(h.id) ?? []),
           best: bestStreak(h, logsByHabit.get(h.id) ?? []),
+          rate7: completionRate(h, logsByHabit.get(h.id) ?? [], 7),
           rate30: completionRate(h, logsByHabit.get(h.id) ?? [], 30),
           rate90: completionRate(h, logsByHabit.get(h.id) ?? [], 90),
           week: weekCount(h, logsByHabit.get(h.id) ?? []),
@@ -99,15 +113,16 @@ export default function HabitStatsPage() {
       <div className="flex items-center gap-2">
         <Link
           href="/habits"
-          className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2 h-8 gap-1")}
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "-ml-2 h-8 gap-1",
+          )}
         >
           <ArrowLeft className="size-3.5" /> Habits
         </Link>
       </div>
 
-      <PageHeader
-        title="Habit analytics"
-      />
+      <PageHeader title="Habit analytics" />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -158,7 +173,10 @@ export default function HabitStatsPage() {
                     {i + 1}
                   </span>
                   <span
-                    className={cn("grid size-8 shrink-0 place-items-center rounded-full text-base", colorSoft(r.habit.color))}
+                    className={cn(
+                      "grid size-8 shrink-0 place-items-center rounded-full text-base",
+                      colorSoft(r.habit.color),
+                    )}
                     aria-hidden
                   >
                     {r.habit.emoji}
@@ -205,19 +223,32 @@ function StatCard({
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-4">
-        <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl", chip)}>
+        <span
+          className={cn(
+            "grid size-10 shrink-0 place-items-center rounded-xl",
+            chip,
+          )}
+        >
           {icon}
         </span>
         <div className="min-w-0">
-          <p className="text-2xl font-bold leading-none tracking-tight tabular-nums">{value}</p>
-          <p className="mt-1 truncate text-xs font-medium text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold leading-none tracking-tight tabular-nums">
+            {value}
+          </p>
+          <p className="mt-1 truncate text-xs font-medium text-muted-foreground">
+            {label}
+          </p>
         </div>
       </CardContent>
     </Card>
   )
 }
 
-function MonthlyChart({ data }: { data: { label: string; checkins: number }[] }) {
+function MonthlyChart({
+  data,
+}: {
+  data: { label: string; checkins: number }[]
+}) {
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -225,10 +256,32 @@ function MonthlyChart({ data }: { data: { label: string; checkins: number }[] })
       </CardHeader>
       <CardContent className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="opacity-20" />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={11} tick={{ fill: "currentColor", opacity: 0.6 }} interval={0} />
-            <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={11} width={40} tick={{ fill: "currentColor", opacity: 0.6 }} />
+          <BarChart
+            data={data}
+            margin={{ top: 4, right: 4, left: -24, bottom: 0 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="currentColor"
+              className="opacity-20"
+            />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              fontSize={11}
+              tick={{ fill: "currentColor", opacity: 0.6 }}
+              interval={0}
+            />
+            <YAxis
+              allowDecimals={false}
+              tickLine={false}
+              axisLine={false}
+              fontSize={11}
+              width={40}
+              tick={{ fill: "currentColor", opacity: 0.6 }}
+            />
             <Tooltip
               cursor={{ fill: "currentColor", opacity: 0.06 }}
               contentStyle={{
@@ -238,7 +291,13 @@ function MonthlyChart({ data }: { data: { label: string; checkins: number }[] })
                 fontSize: 12,
               }}
             />
-            <Bar dataKey="checkins" name="Check-ins" fill="var(--primary)" radius={[3, 3, 0, 0]} maxBarSize={28} />
+            <Bar
+              dataKey="checkins"
+              name="Check-ins"
+              fill="var(--primary)"
+              radius={[3, 3, 0, 0]}
+              maxBarSize={28}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -255,6 +314,7 @@ function DetailGrid({
     dates: string[]
     current: number
     best: number
+    rate7: number
     rate30: number
     rate90: number
     week: number
@@ -268,56 +328,144 @@ function DetailGrid({
       <h2 className="text-lg font-semibold">Per-habit detail</h2>
       <div className="grid gap-4">
         {ranked.map((r) => (
-          <Card key={r.habit.id}>
-            <CardContent className="space-y-3 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span
-                    className={cn("grid size-10 shrink-0 place-items-center rounded-xl text-xl shadow-sm", colorSoft(r.habit.color))}
-                    aria-hidden
-                  >
-                    {r.habit.emoji}
-                  </span>
-                  <div>
-                    <h3 className="font-semibold">{r.habit.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {r.habit.frequency_type === "weekly"
-                        ? `Weekly target · ${r.habit.frequency_value.times ?? 3}/wk · ${r.week} done`
-                        : `${r.dates.length} total check-ins`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-4 text-center">
-                  <Metric label="Current" value={String(r.current)} accent />
-                  <Metric label="Best streak" value={String(r.best)} accent />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                {([7, 30, 90] as const).map((d) => {
-                  const rate = d === 7
-                    ? completionRate(r.habit, r.dates, 7)
-                    : d === 30
-                      ? r.rate30
-                      : r.rate90
-                  return (
-                    <div key={d} className="space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{d}d</span>
-                        <span className="font-medium">{Math.round(rate * 100)}%</span>
-                      </div>
-                      <Progress value={rate * 100} />
-                    </div>
-                  )
-                })}
-              </div>
-
-              <HeatmapRow habit={r.habit} days={days} dates={new Set(r.dates)} />
-            </CardContent>
-          </Card>
+          <HabitDetailCard key={r.habit.id} r={r} days={days} />
         ))}
       </div>
     </div>
+  )
+}
+
+function HabitDetailCard({
+  r,
+  days,
+}: {
+  r: {
+    habit: Habit
+    dates: string[]
+    current: number
+    best: number
+    rate7: number
+    rate30: number
+    rate90: number
+    week: number
+  }
+  days: string[]
+}) {
+  const [heatmapOpen, setHeatmapOpen] = useState(false)
+  const [activePeriod, setActivePeriod] = useState<7 | 30 | 90>(30)
+
+  const rates = {
+    7: r.rate7,
+    30: r.rate30,
+    90: r.rate90,
+  }
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 p-4">
+        {/* Header row */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span
+              className={cn(
+                "grid size-10 shrink-0 place-items-center rounded-xl text-xl shadow-sm",
+                colorSoft(r.habit.color),
+              )}
+              aria-hidden
+            >
+              {r.habit.emoji}
+            </span>
+            <div>
+              <h3 className="font-semibold">{r.habit.name}</h3>
+              <p className="text-xs text-muted-foreground">
+                {r.habit.frequency_type === "weekly"
+                  ? `Weekly target · ${r.habit.frequency_value.times ?? 3}/wk · ${r.week} done`
+                  : `${r.dates.length} total check-ins`}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-4 text-center">
+            <Metric label="Current" value={String(r.current)} accent />
+            <Metric label="Best streak" value={String(r.best)} accent />
+          </div>
+        </div>
+
+        {/* Progress: segmented on mobile, grid on desktop */}
+        <div>
+          {/* Mobile: segmented control */}
+          <div className="flex md:hidden">
+            <div className="flex w-full rounded-xl border bg-muted/40 p-0.5">
+              {PERIODS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setActivePeriod(d)}
+                  className={cn(
+                    "flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-all",
+                    activePeriod === d
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {d}d
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Mobile: single progress bar for selected period */}
+          <div className="mt-2 md:hidden">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Last {activePeriod} days</span>
+              <span className="font-semibold tabular-nums text-foreground">
+                {Math.round(rates[activePeriod] * 100)}%
+              </span>
+            </div>
+            <Progress value={rates[activePeriod] * 100} className="mt-1.5" />
+          </div>
+
+          {/* Desktop: 3-column grid */}
+          <div className="hidden grid-cols-3 gap-3 md:grid">
+            {PERIODS.map((d) => (
+              <div key={d} className="space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{d}d</span>
+                  <span className="font-medium">
+                    {Math.round(rates[d] * 100)}%
+                  </span>
+                </div>
+                <Progress value={rates[d] * 100} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Heatmap toggle */}
+        <button
+          type="button"
+          onClick={() => setHeatmapOpen((v) => !v)}
+          className="flex w-full items-center justify-between rounded-xl border border-dashed px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted/30"
+        >
+          <span className="flex items-center gap-1.5">
+            <Grid3X3 className="size-3.5" />
+            {heatmapOpen ? "Hide heatmap" : "Show 28-day heatmap"}
+          </span>
+          <ChevronDown
+            className={cn(
+              "size-3.5 transition-transform duration-200",
+              heatmapOpen && "rotate-180",
+            )}
+          />
+        </button>
+
+        {/* Collapsible heatmap */}
+        {heatmapOpen && (
+          <div className="rounded-xl border bg-muted/20 p-3">
+            <HeatmapRow habit={r.habit} days={days} dates={new Set(r.dates)} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -332,7 +480,12 @@ function Metric({
 }) {
   return (
     <div>
-      <p className={cn("text-lg font-bold leading-none", accent && "text-chart-1")}>
+      <p
+        className={cn(
+          "text-lg font-bold leading-none",
+          accent && "text-chart-1",
+        )}
+      >
         {value}
       </p>
       <p className="text-xs text-muted-foreground">{label}</p>
@@ -351,28 +504,26 @@ function HeatmapRow({
 }) {
   const today = todayISO()
   return (
-    <div className="overflow-x-auto">
-      <div className="flex min-w-[560px] gap-1">
-        {days.map((d) => {
-          const done = dates.has(d)
-          const due = isDueOnDate(habit, d)
-          return (
-            <span
-              key={d}
-              title={`${humanDate(d)}${done ? " · done" : ""}`}
-              className={cn(
-                "size-3 shrink-0 rounded-full",
-                done
-                  ? "bg-primary"
-                  : due
-                    ? "bg-muted ring-1 ring-inset ring-border"
-                    : "bg-transparent ring-1 ring-inset ring-border/40",
-                d === today && "ring-2 ring-foreground/40",
-              )}
-            />
-          )
-        })}
-      </div>
+    <div className="grid grid-cols-7 gap-1.5">
+      {days.map((d) => {
+        const done = dates.has(d)
+        const due = isDueOnDate(habit, d)
+        return (
+          <span
+            key={d}
+            title={`${humanDate(d)}${done ? " · done" : ""}`}
+            className={cn(
+              "size-3 rounded-full",
+              done
+                ? "bg-primary"
+                : due
+                  ? "bg-muted ring-1 ring-inset ring-border"
+                  : "bg-transparent ring-1 ring-inset ring-border/40",
+              d === today && "ring-2 ring-foreground/40",
+            )}
+          />
+        )
+      })}
     </div>
   )
 }
