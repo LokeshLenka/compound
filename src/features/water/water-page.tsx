@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Link from "next/link";
 import {
   Check,
   Droplet,
@@ -10,10 +11,12 @@ import {
   Trash2,
   Undo2,
   X,
+  BarChart3,
 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -40,6 +43,7 @@ import {
   weekTotalMl,
 } from "@/lib/water";
 import type { WaterLog, WaterUnit } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 /** Matches the amount_ml check constraint on water_intake_logs. */
 const MAX_ENTRY_ML = 5000;
@@ -52,6 +56,8 @@ export default function WaterPage() {
   const updateWater = useUpdateWater();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const logs = logsQuery.data ?? [];
   const settings = settingsQuery.data;
@@ -83,10 +89,16 @@ export default function WaterPage() {
       <PageHeader
         title="Water"
         actions={
-          <Button variant="outline" onClick={() => setSettingsOpen(true)}>
-            <Settings2 className="size-4" />
-            Settings
-          </Button>
+          <div className="flex gap-2">
+            <Link href="/water/stats" className={cn("inline-flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground")}>
+              <BarChart3 className="size-4" />
+              Stats
+            </Link>
+            <Button variant="outline" onClick={() => setSettingsOpen(true)}>
+              <Settings2 className="size-4" />
+              Settings
+            </Button>
+          </div>
         }
       />
 
@@ -134,7 +146,10 @@ export default function WaterPage() {
                     variant="ghost"
                     size="sm"
                     disabled={deleteWater.isPending}
-                    onClick={() => deleteWater.mutate(todayLogs[0].id)}
+                    onClick={() => {
+                      setPendingDeleteId(todayLogs[0].id);
+                      setConfirmDeleteOpen(true);
+                    }}
                   >
                     <Undo2 className="size-4" />
                     Undo last
@@ -156,7 +171,10 @@ export default function WaterPage() {
                       onSave={(amountMl) =>
                         updateWater.mutate({ id: log.id, amount_ml: amountMl })
                       }
-                      onDelete={() => deleteWater.mutate(log.id)}
+                      onDelete={() => {
+                        setPendingDeleteId(log.id);
+                        setConfirmDeleteOpen(true);
+                      }}
                     />
                   ))}
                 </div>
@@ -188,6 +206,14 @@ export default function WaterPage() {
       </div>
 
       <WaterSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <ConfirmDeleteDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        onConfirm={() => {
+          if (pendingDeleteId) void deleteWater.mutate(pendingDeleteId);
+          setPendingDeleteId(null);
+        }}
+      />
     </div>
   );
 }
