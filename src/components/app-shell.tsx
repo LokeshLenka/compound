@@ -1,10 +1,8 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { useTheme } from "next-themes"
-import { useRef, useEffect, useState } from "react"
-import { motion } from "motion/react"
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   BookOpen,
   FileText,
@@ -19,20 +17,20 @@ import {
   Droplet,
   Wallet,
   MoreHorizontal,
-} from "lucide-react"
-import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import { cn } from "@/lib/utils"
-import { GlobalSearch } from "@/features/search/global-search"
-import { InstallPrompt } from "@/components/install-prompt"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+} from "lucide-react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
+import { GlobalSearch } from "@/features/search/global-search";
+import { InstallPrompt } from "@/components/install-prompt";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import type { Profile } from "@/lib/types"
+} from "@/components/ui/dropdown-menu";
+import type { Profile } from "@/lib/types";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -43,27 +41,28 @@ const NAV = [
   { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/expenses", label: "Expenses", icon: Wallet },
   { href: "/water", label: "Water", icon: Droplet },
-]
+];
 
 const MOBILE_PRIMARY = [
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/habits", label: "Habits", icon: Repeat },
   { href: "/tasks", label: "Tasks", icon: ListChecks },
-  { href: "/water", label: "Water", icon: Droplet },
   { href: "/expenses", label: "Expenses", icon: Wallet },
-]
+  { href: "/water", label: "Water", icon: Droplet },
+];
 
 const MOBILE_MORE = [
   { href: "/diary", label: "Diary", icon: BookOpen },
   { href: "/journal", label: "Journal", icon: NotebookPen },
   { href: "/notes", label: "Notes", icon: FileText },
-]
+];
 
 function NavLinks({
   pathname,
   onNavigate,
 }: {
-  pathname: string
-  onNavigate?: () => void
+  pathname: string;
+  onNavigate?: () => void;
 }) {
   return (
     <nav
@@ -71,7 +70,7 @@ function NavLinks({
       aria-label="Primary"
     >
       {NAV.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`)
+        const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link
             key={href}
@@ -106,141 +105,98 @@ function NavLinks({
               />
             )}
           </Link>
-        )
+        );
       })}
     </nav>
-  )
+  );
 }
 
 function MobileBottomNav({ pathname }: { pathname: string }) {
-  const navRef = useRef<HTMLDivElement>(null)
-  const itemRefs = useRef<Map<string, HTMLElement>>(new Map())
-  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null)
-
   const isMoreActive = MOBILE_MORE.some(
     ({ href }) => pathname === href || pathname.startsWith(`${href}/`),
-  )
-
-  const activeHref = MOBILE_PRIMARY.find(
-    ({ href }) => pathname === href || pathname.startsWith(`${href}/`),
-  )?.href
-
-  useEffect(() => {
-    if (!navRef.current) return
-    if (isMoreActive) {
-      const moreBtn = itemRefs.current.get("more")
-      if (moreBtn) {
-        const navRect = navRef.current.getBoundingClientRect()
-        const elRect = moreBtn.getBoundingClientRect()
-        setIndicator({
-          left: elRect.left - navRect.left + (elRect.width - 36) / 2,
-          width: 36,
-        })
-      }
-      return
-    }
-    if (!activeHref) {
-      setIndicator(null)
-      return
-    }
-    const el = itemRefs.current.get(activeHref)
-    if (!el) return
-    const navRect = navRef.current.getBoundingClientRect()
-    const elRect = el.getBoundingClientRect()
-    setIndicator({
-      left: elRect.left - navRect.left + (elRect.width - 36) / 2,
-      width: 36,
-    })
-  }, [activeHref, isMoreActive])
+  );
 
   return (
     <nav
-      ref={navRef}
       aria-label="Primary"
-      className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md items-center justify-between rounded-full border bg-background/90 px-2 py-1.5 shadow-lg backdrop-blur md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur-xl md:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {indicator && (
-        <motion.span
-          aria-hidden
-          className="absolute top-1/2 -translate-y-1/2 rounded-full bg-primary/15"
-          initial={false}
-          animate={{ left: indicator.left, width: indicator.width }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          style={{ height: 36 }}
-        />
-      )}
-      {MOBILE_PRIMARY.map(({ href, label, icon: Icon }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`)
-        return (
-          <Link
-            key={href}
-            href={href}
-            ref={(el) => {
-              if (el) itemRefs.current.set(href, el)
-            }}
-            aria-label={label}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "relative z-10 flex size-11 items-center justify-center rounded-full transition-colors",
-              active ? "text-primary" : "text-muted-foreground",
-            )}
-          >
-            <motion.div
-              animate={active ? { scale: 1.15 } : { scale: 1 }}
-              transition={{ type: "spring", stiffness: 500, damping: 28 }}
+      <div className="flex items-center justify-around px-2 py-3">
+        {MOBILE_PRIMARY.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || pathname.startsWith(`${href}/`);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-label={label}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 transition-colors",
+                active ? "text-primary" : "text-muted-foreground",
+              )}
             >
               <Icon className="size-5" aria-hidden />
-            </motion.div>
-          </Link>
-        )
-      })}
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          ref={(el) => {
-            if (el) itemRefs.current.set("more", el)
-          }}
-          className={cn(
-            "relative z-10 flex size-11 items-center justify-center rounded-full transition-colors",
-            isMoreActive ? "text-primary" : "text-muted-foreground",
-          )}
-        >
-          <motion.div
-            animate={isMoreActive ? { scale: 1.15 } : { scale: 1 }}
-            transition={{ type: "spring", stiffness: 500, damping: 28 }}
+              <span className="text-[0.625rem] font-semibold leading-none">
+                {label}
+              </span>
+              {/* {active && (
+                <span className="mt-0.5 size-1 rounded-full bg-primary" />
+              )} */}
+            </Link>
+          );
+        })}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              "flex flex-col items-center gap-0.5 rounded-xl px-3 py-1 transition-colors",
+              isMoreActive ? "text-primary" : "text-muted-foreground",
+            )}
           >
             <MoreHorizontal className="size-5" aria-hidden />
-          </motion.div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" sideOffset={8} align="end">
-          {MOBILE_MORE.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(`${href}/`)
-            return (
-              <DropdownMenuItem
-                key={href}
-                render={
-                  <Link
-                    href={href}
-                    className={cn(
-                      "flex items-center gap-2",
-                      active && "text-primary",
-                    )}
-                  />
-                }
-              >
-                <Icon className="size-4" aria-hidden />
-                {label}
-              </DropdownMenuItem>
-            )
-          })}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <span className="text-[0.625rem] font-semibold leading-none">
+              More
+            </span>
+            {isMoreActive && (
+              <span className="mt-0.5 size-1 rounded-full bg-primary" />
+            )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="top"
+            sideOffset={12}
+            align="center"
+            className="rounded-2xl"
+          >
+            {MOBILE_MORE.map(({ href, label, icon: Icon }) => {
+              const active = pathname === href || pathname.startsWith(`${href}/`);
+              return (
+                <DropdownMenuItem
+                  key={href}
+                  render={
+                    <Link
+                      href={href}
+                      className={cn(
+                        "flex items-center gap-2.5",
+                        active && "text-primary",
+                      )}
+                    />
+                  }
+                >
+                  <Icon className="size-4" aria-hidden />
+                  {label}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </nav>
-  )
+  );
 }
 
 function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   return (
     <Button
       variant="ghost"
@@ -256,23 +212,23 @@ function ThemeToggle() {
         <Moon className="size-4" aria-hidden />
       )}
     </Button>
-  )
+  );
 }
 
 export function AppShell({
   children,
   profile,
 }: {
-  children: React.ReactNode
-  profile: Profile | null
+  children: React.ReactNode;
+  profile: Profile | null;
 }) {
-  const pathname = usePathname()
-  const router = useRouter()
+  const pathname = usePathname();
+  const router = useRouter();
 
   async function signOut() {
-    await getSupabaseBrowserClient().auth.signOut()
-    router.push("/login")
-    router.refresh()
+    await getSupabaseBrowserClient().auth.signOut();
+    router.push("/login");
+    router.refresh();
   }
 
   const initials = (profile?.full_name || "U")
@@ -280,7 +236,7 @@ export function AppShell({
     .map((s) => s[0])
     .slice(0, 2)
     .join("")
-    .toUpperCase()
+    .toUpperCase();
 
   return (
     <div className="flex min-h-dvh">
@@ -324,16 +280,27 @@ export function AppShell({
           )}
         </Link>
         <div className="mt-3 flex flex-col items-center gap-1 rounded-full bg-card/70 px-1.5 py-2 ring-1 ring-border/50 xl:flex-row xl:gap-2 xl:px-2 xl:py-1.5">
-          <Avatar className="size-9 shrink-0" title={profile?.full_name || "User"}>
+          <Avatar
+            className="size-9 shrink-0"
+            title={profile?.full_name || "User"}
+          >
             <AvatarFallback className="bg-accent text-xs text-accent-foreground">
               {initials}
             </AvatarFallback>
           </Avatar>
           <div className="hidden min-w-0 flex-1 xl:block">
-            <p className="truncate text-sm font-medium">{profile?.full_name || "User"}</p>
+            <p className="truncate text-sm font-medium">
+              {profile?.full_name || "User"}
+            </p>
           </div>
           <ThemeToggle />
-          <Button variant="ghost" size="icon" aria-label="Sign out" title="Sign out" onClick={signOut}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Sign out"
+            title="Sign out"
+            onClick={signOut}
+          >
             <LogOut className="size-4" />
           </Button>
         </div>
@@ -363,5 +330,5 @@ export function AppShell({
       <MobileBottomNav pathname={pathname} />
       <InstallPrompt />
     </div>
-  )
+  );
 }
