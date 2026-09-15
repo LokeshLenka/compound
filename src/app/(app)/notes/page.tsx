@@ -39,6 +39,7 @@ import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
@@ -91,6 +92,7 @@ function NotesPageContent() {
   const [content, setContent] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [isPinned, setIsPinned] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -313,14 +315,19 @@ function NotesPageContent() {
                 variant="ghost"
                 size="sm"
                 className="text-destructive hover:text-destructive"
-                onClick={() => {
-                  void deleteNote.mutate(activeNote.id);
-                  setEditing(false);
-                }}
+                onClick={() => setConfirmDeleteOpen(true)}
               >
                 <Trash2 className="size-4" />
               </Button>
             )}
+            <ConfirmDeleteDialog
+              open={confirmDeleteOpen}
+              onOpenChange={setConfirmDeleteOpen}
+              onConfirm={() => {
+                if (activeNote) void deleteNote.mutate(activeNote.id);
+                setEditing(false);
+              }}
+            />
             <Button
               size="sm"
               onClick={handleSave}

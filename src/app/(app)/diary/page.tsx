@@ -27,6 +27,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { Component as VintageKeyboard } from "@/components/ui/vintage-keyboard";
 import {
   Sheet,
@@ -58,6 +59,7 @@ export default function DiaryPage() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [editing, setEditing] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef<string>("");
@@ -280,11 +282,18 @@ export default function DiaryPage() {
                 variant="ghost"
                 size="sm"
                 className="text-destructive hover:text-destructive"
-                onClick={() => void deleteEntry.mutate(entry.id)}
+                onClick={() => setConfirmDeleteOpen(true)}
               >
                 <Trash2 className="size-4" />
               </Button>
             )}
+            <ConfirmDeleteDialog
+              open={confirmDeleteOpen}
+              onOpenChange={setConfirmDeleteOpen}
+              onConfirm={() => {
+                if (entry) void deleteEntry.mutate(entry.id);
+              }}
+            />
             <Button
               size="sm"
               onClick={handleSave}

@@ -10,6 +10,7 @@ import { MarkdownEditor } from "@/features/notes/markdown-editor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ export function NoteFormDialog({
 
   const [content, setContent] = useState("");
   const [tagsInput, setTagsInput] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   /* eslint-disable react-hooks/set-state-in-effect */ // syncs form + editor to the opened note
   useEffect(() => {
@@ -96,14 +98,19 @@ export function NoteFormDialog({
                 type="button"
                 variant="destructive"
                 className="mr-auto"
-                onClick={() => {
-                  void deleteNote.mutate(note.id);
-                  onOpenChange(false);
-                }}
+                onClick={() => setConfirmOpen(true)}
               >
                 Delete
               </Button>
             )}
+            <ConfirmDeleteDialog
+              open={confirmOpen}
+              onOpenChange={setConfirmOpen}
+              onConfirm={() => {
+                if (note) void deleteNote.mutate(note.id);
+                onOpenChange(false);
+              }}
+            />
             <Button
               type="button"
               variant="outline"

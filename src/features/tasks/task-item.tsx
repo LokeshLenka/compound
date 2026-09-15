@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 
 function DueBadge({ task }: { task: Task }) {
   if (!task.due_date || task.status === "done") return null;
@@ -93,6 +94,7 @@ export function TaskRow({
   const setStatus = useSetTaskStatus();
   const deleteTask = useDeleteTask();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const done = task.status === "done";
   const StatusIcon = STATUS_ICONS[task.status];
 
@@ -215,10 +217,7 @@ export function TaskRow({
                 {STATUS_META[nextStatus[task.status]].label}
               </motion.button>
               <motion.button
-                onClick={() => {
-                  deleteTask.mutate(task.id);
-                  setSheetOpen(false);
-                }}
+                onClick={() => setConfirmDeleteOpen(true)}
                 whileTap={{ scale: 0.98 }}
                 className="flex w-full items-center gap-3 px-3 py-3 rounded-xl text-left text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
               >
@@ -228,6 +227,14 @@ export function TaskRow({
             </div>
           </SheetContent>
         </Sheet>
+        <ConfirmDeleteDialog
+          open={confirmDeleteOpen}
+          onOpenChange={setConfirmDeleteOpen}
+          onConfirm={() => {
+            deleteTask.mutate(task.id);
+            setSheetOpen(false);
+          }}
+        />
       </div>
 
       {/* Desktop layout */}
@@ -307,7 +314,7 @@ export function TaskRow({
             size="icon"
             className="size-8"
             aria-label={`Delete ${task.title}`}
-            onClick={() => deleteTask.mutate(task.id)}
+            onClick={() => setConfirmDeleteOpen(true)}
           >
             <Trash2 className="size-3.5" />
           </Button>

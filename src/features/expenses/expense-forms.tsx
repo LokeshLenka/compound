@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -28,6 +28,7 @@ import { colorSoft, HABIT_COLORS } from "@/lib/colors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import {
   Dialog,
   DialogContent,
@@ -97,6 +98,7 @@ export function TransactionDialog({
   const save = useSaveTransaction();
   const remove = useDeleteTransaction();
   const isEdit = Boolean(txn);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const { register, reset, handleSubmit, setValue, watch, formState } =
     useForm<ExpenseTransactionFormValues>({
@@ -214,14 +216,19 @@ export function TransactionDialog({
                 type="button"
                 variant="destructive"
                 className="mr-auto"
-                onClick={() => {
-                  void remove.mutate(txn.id);
-                  onOpenChange(false);
-                }}
+                onClick={() => setConfirmDeleteOpen(true)}
               >
                 Delete
               </Button>
             )}
+            <ConfirmDeleteDialog
+              open={confirmDeleteOpen}
+              onOpenChange={setConfirmDeleteOpen}
+              onConfirm={() => {
+                if (txn) void remove.mutate(txn.id);
+                onOpenChange(false);
+              }}
+            />
             <Button
               type="button"
               variant="outline"
@@ -256,6 +263,7 @@ export function CategoryDialog({
   const save = useSaveCategory();
   const remove = useDeleteCategory();
   const isEdit = Boolean(category);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const { register, reset, handleSubmit, setValue, watch, formState } =
     useForm<ExpenseCategoryFormValues>({
@@ -351,14 +359,19 @@ export function CategoryDialog({
                 type="button"
                 variant="destructive"
                 className="mr-auto"
-                onClick={() => {
-                  void remove.mutate(category.id);
-                  onOpenChange(false);
-                }}
+                onClick={() => setConfirmDeleteOpen(true)}
               >
                 Delete
               </Button>
             )}
+            <ConfirmDeleteDialog
+              open={confirmDeleteOpen}
+              onOpenChange={setConfirmDeleteOpen}
+              onConfirm={() => {
+                if (category) void remove.mutate(category.id);
+                onOpenChange(false);
+              }}
+            />
             <Button
               type="button"
               variant="outline"
@@ -399,6 +412,7 @@ export function BudgetDialog({
   const save = useSaveBudget();
   const remove = useDeleteBudget();
   const isEdit = Boolean(budget);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const { register, reset, handleSubmit, setValue, watch, formState } =
     useForm<ExpenseBudgetFormValues>({
@@ -506,15 +520,20 @@ export function BudgetDialog({
               <Button
                 type="button"
                 variant="destructive"
-                className="mr-auto"
-                onClick={() => {
-                  void remove.mutate(budget.id);
-                  onOpenChange(false);
-                }}
+                className="w-full sm:w-auto mr-auto"
+                onClick={() => setConfirmDeleteOpen(true)}
               >
                 Delete
               </Button>
             )}
+            <ConfirmDeleteDialog
+              open={confirmDeleteOpen}
+              onOpenChange={setConfirmDeleteOpen}
+              onConfirm={() => {
+                if (budget) void remove.mutate(budget.id);
+                onOpenChange(false);
+              }}
+            />
             <Button
               type="button"
               variant="outline"

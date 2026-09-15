@@ -15,6 +15,7 @@ import {
 } from "@/features/journaling/use-journaling";
 import { MOODS } from "@/features/diary/moods";
 import { Button } from "@/components/ui/button";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,6 +66,7 @@ export function JournalFormDialog({
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -202,14 +204,19 @@ export function JournalFormDialog({
               variant="ghost"
               size="sm"
               className="text-destructive hover:text-destructive"
-              onClick={() => {
-                void deleteEntry.mutate(entry.id);
-                onOpenChange(false);
-              }}
+              onClick={() => setConfirmDeleteOpen(true)}
             >
               <Trash2 className="size-4" />
             </Button>
           )}
+          <ConfirmDeleteDialog
+            open={confirmDeleteOpen}
+            onOpenChange={setConfirmDeleteOpen}
+            onConfirm={() => {
+              if (entry) void deleteEntry.mutate(entry.id);
+              onOpenChange(false);
+            }}
+          />
           <Button
             type="submit"
             form="journal-editor-form"
@@ -236,6 +243,7 @@ export function JournalFormDialog({
               placeholder="Give it a title (optional)"
               className="text-xl font-semibold border-0 px-5 shadow-none focus-visible:ring-0 h-auto py-1"
               autoFocus
+              required
               {...register("title")}
             />
             <Textarea
