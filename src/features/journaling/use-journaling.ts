@@ -38,7 +38,7 @@ export function useSaveJournalEntry() {
     }) => {
       const sb = getSupabaseBrowserClient()
       const payload = {
-        title: values.title || null,
+        title: values.title || "",
         content: values.content,
         mood: values.mood,
         tags: values.tags,
