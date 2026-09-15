@@ -243,7 +243,6 @@ export function JournalFormDialog({
               placeholder="Give it a title (optional)"
               className="text-xl font-semibold border-0 px-5 shadow-none focus-visible:ring-0 h-auto py-1"
               autoFocus
-              required
               {...register("title")}
             />
             <Textarea
