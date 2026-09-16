@@ -9,6 +9,7 @@ import {
   X,
   PenLine,
   SlidersHorizontal,
+  Keyboard,
 } from "lucide-react";
 import {
   useDiaryEntries,
@@ -57,6 +58,7 @@ export default function DiaryPage() {
   const [tagsInput, setTagsInput] = useState("");
   const [dirty, setDirty] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [editing, setEditing] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -338,33 +340,57 @@ export default function DiaryPage() {
             <aside className="hidden shrink-0 border-l p-4 sm:p-5 lg:block lg:w-72 lg:overflow-y-auto">
               {sidebarContent}
 
-              {/* Sound toggle — desktop only */}
+              {/* Keyboard toggle — desktop only */}
               <div className="mt-5 space-y-2.5">
                 <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Sound
+                  Keyboard
                 </Label>
                 <button
                   type="button"
-                  onClick={() => setSoundEnabled((s) => !s)}
-                  className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {soundEnabled ? (
-                    <Volume2 className="size-4" />
-                  ) : (
-                    <VolumeX className="size-4" />
+                  onClick={() => setKeyboardVisible((v) => !v)}
+                  className={cn(
+                    "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
+                    keyboardVisible
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
-                  {soundEnabled ? "On" : "Off"}
+                >
+                  <Keyboard className="size-4" />
+                  {keyboardVisible ? "Visible" : "Hidden"}
                 </button>
               </div>
+
+              {/* Sound toggle — desktop only, only when keyboard is visible */}
+              {keyboardVisible && (
+                <div className="mt-5 space-y-2.5">
+                  <Label className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Sound
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => setSoundEnabled((s) => !s)}
+                    className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {soundEnabled ? (
+                      <Volume2 className="size-4" />
+                    ) : (
+                      <VolumeX className="size-4" />
+                    )}
+                    {soundEnabled ? "On" : "Off"}
+                  </button>
+                </div>
+              )}
             </aside>
           </div>
 
           {/* Keyboard: desktop only */}
-          <div className="hidden max-h-[45vh] overflow-hidden border-t lg:block">
-            <div className="[&>.kb-viewport]:!min-h-0 [&>.kb-viewport]:h-full">
-              <VintageKeyboard muted={!soundEnabled} />
+          {keyboardVisible && (
+            <div className="hidden max-h-[45vh] overflow-hidden border-t lg:block">
+              <div className="[&>.kb-viewport]:!min-h-0 [&>.kb-viewport]:h-full">
+                <VintageKeyboard muted={!soundEnabled} />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Mobile settings sheet */}

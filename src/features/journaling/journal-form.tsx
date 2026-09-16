@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   journalSchema,
@@ -36,6 +36,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
+const AUTO_SAVE_DELAY = 2000;
+
 export function JournalFormDialog({
   open,
   onOpenChange,
@@ -61,12 +63,21 @@ export function JournalFormDialog({
       },
     });
 
-  const mood = watch("mood");
+  const allValues = useWatch({ control: undefined });
   const [tagsInput, setTagsInput] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+
+  const [dirty, setDirty] = useState(false);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedRef = useRef<string>("");
+
+  const snapshot = useMemo(
+    () => JSON.stringify({ ...allValues, tagsInput }),
+    [allValues, tagsInput],
+  );
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -79,15 +90,66 @@ export function JournalFormDialog({
         category: entry?.category ?? "",
       });
       setTagsInput(entry?.tags?.join(", ") ?? "");
+      setDirty(false);
+      lastSavedRef.current = JSON.stringify({
+        title: entry?.title ?? "",
+        content: entry?.content ?? "",
+        mood: entry?.mood ?? null,
+        tags: entry?.tags ?? [],
+        category: entry?.category ?? "",
+        tagsInput: entry?.tags?.join(", ") ?? "",
+      });
     }
   }, [open, entry, reset]);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  useEffect(() => {
+    if (!dirty || snapshot === lastSavedRef.current) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      void doSave();
+    }, AUTO_SAVE_DELAY);
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, [dirty, snapshot]);
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    };
+  }, []);
+
+  function closeEditor() {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    if (dirty && snapshot !== lastSavedRef.current) {
+      void doSave();
+    }
+    setDirty(false);
+    onOpenChange(false);
+  }
+
+  const doSave = useCallback(async () => {
+    const values = watch();
+    await saveEntry.mutateAsync({
+      id: entry?.id,
+      values: { ...values, tags: splitTags(tagsInput || "") },
+    });
+    lastSavedRef.current = snapshot;
+    setDirty(false);
+  }, [entry, tagsInput, snapshot, saveEntry, watch]);
+
+  function markDirty() {
+    setDirty(true);
+  }
 
   async function onSubmit(values: JournalFormValues) {
     await saveEntry.mutateAsync({
       id: entry?.id,
       values: { ...values, tags: splitTags(tagsInput || "") },
     });
+    lastSavedRef.current = snapshot;
+    setDirty(false);
     onOpenChange(false);
   }
 
@@ -110,15 +172,16 @@ export function JournalFormDialog({
               key={m.value}
               type="button"
               aria-label={m.label}
-              aria-pressed={mood === m.value}
-              onClick={() =>
-                setValue("mood", mood === m.value ? null : m.value, {
+              aria-pressed={allValues.mood === m.value}
+              onClick={() => {
+                setValue("mood", allValues.mood === m.value ? null : m.value, {
                   shouldDirty: true,
-                })
-              }
+                });
+                markDirty();
+              }}
               className={cn(
                 "grid size-9 place-items-center rounded-full text-lg transition active:scale-95",
-                mood === m.value
+                allValues.mood === m.value
                   ? "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/40 ring-offset-1 ring-offset-background"
                   : "bg-muted/60 hover:bg-muted",
               )}
@@ -126,10 +189,13 @@ export function JournalFormDialog({
               <span aria-hidden>{m.emoji}</span>
             </button>
           ))}
-          {mood !== null && mood !== undefined && (
+          {allValues.mood !== null && allValues.mood !== undefined && (
             <button
               type="button"
-              onClick={() => setValue("mood", null, { shouldDirty: true })}
+              onClick={() => {
+                setValue("mood", null, { shouldDirty: true });
+                markDirty();
+              }}
               className="ml-1 rounded-full px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
             >
               Clear
@@ -149,7 +215,7 @@ export function JournalFormDialog({
         <Input
           id="journal-category"
           placeholder="personal, work, travel…"
-          {...register("category")}
+          {...register("category", { onChange: markDirty })}
         />
       </div>
 
@@ -165,7 +231,10 @@ export function JournalFormDialog({
           id="journal-tags"
           placeholder="morning, wins, ideas"
           value={tagsInput}
-          onChange={(e) => setTagsInput(e.target.value)}
+          onChange={(e) => {
+            setTagsInput(e.target.value);
+            markDirty();
+          }}
         />
       </div>
     </div>
@@ -179,14 +248,17 @@ export function JournalFormDialog({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={() => onOpenChange(false)}
+          onClick={closeEditor}
           className="gap-1.5"
         >
           <X className="size-4" />
-          Cancel
+          Close
         </Button>
         <h2 className="text-sm font-medium text-muted-foreground">
           {isEdit ? "Edit entry" : "New journal entry"}
+          {dirty && (
+            <span className="ml-2 text-xs text-orange-500">Unsaved</span>
+          )}
         </h2>
         <div className="flex items-center gap-2">
           <Button
@@ -243,13 +315,13 @@ export function JournalFormDialog({
               placeholder="Give it a title (optional)"
               className="text-xl font-semibold border-0 px-5 shadow-none focus-visible:ring-0 h-auto py-1"
               autoFocus
-              {...register("title")}
+              {...register("title", { onChange: markDirty })}
             />
             <Textarea
               id="journal-content"
               placeholder="What's on your mind? Write freely — no structure needed…"
               className="mt-2 flex-1 max-h-[40vh] resize-none border-0 px-5 shadow-none focus-visible:ring-0 lg:min-h-0 radius-none"
-              {...register("content")}
+              {...register("content", { onChange: markDirty })}
             />
           </div>
 

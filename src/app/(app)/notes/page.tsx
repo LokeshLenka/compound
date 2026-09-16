@@ -159,7 +159,7 @@ function NotesPageContent() {
   );
 
   const doSave = useCallback(async () => {
-    await saveNote.mutateAsync({
+    const returnedId = await saveNote.mutateAsync({
       id: activeNote?.id,
       values: {
         title: title || "Untitled",
@@ -167,6 +167,9 @@ function NotesPageContent() {
         tags: splitTags(tagsInput || ""),
       },
     });
+    if (returnedId && !activeNote?.id) {
+      setActiveNote((prev) => prev ? prev : { id: returnedId } as Note);
+    }
     lastSavedRef.current = snapshot;
     setDirty(false);
   }, [activeNote, title, content, tagsInput, snapshot, saveNote]);
@@ -218,7 +221,7 @@ function NotesPageContent() {
   }
 
   async function handleSave() {
-    await saveNote.mutateAsync({
+    const returnedId = await saveNote.mutateAsync({
       id: activeNote?.id,
       values: {
         title: title || "Untitled",
@@ -226,6 +229,9 @@ function NotesPageContent() {
         tags: splitTags(tagsInput || ""),
       },
     });
+    if (returnedId && !activeNote?.id) {
+      setActiveNote((prev) => prev ? prev : { id: returnedId } as Note);
+    }
     lastSavedRef.current = snapshot;
     setDirty(false);
   }

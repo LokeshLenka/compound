@@ -36,7 +36,7 @@ export function useSaveNote() {
     }: {
       id?: string
       values: NoteFormValues
-    }) => {
+    }): Promise<string | undefined> => {
       const sb = getSupabaseBrowserClient()
       const payload = {
         title: values.title || "Untitled",
@@ -46,9 +46,11 @@ export function useSaveNote() {
       if (id) {
         const { error } = await sb.from("notes").update(payload).eq("id", id)
         if (error) throw error
+        return id
       } else {
-        const { error } = await sb.from("notes").insert(payload)
+        const { data, error } = await sb.from("notes").insert(payload).select("id").single()
         if (error) throw error
+        return data?.id
       }
     },
     onSuccess: (_d, v) => {
