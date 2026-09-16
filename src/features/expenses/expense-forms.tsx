@@ -115,6 +115,7 @@ export function TransactionDialog({
 
   const type = watch("type");
   const categoryId = watch("category_id");
+  const categoryName = categories.find((c) => c.id === categoryId)?.name;
 
   /* eslint-disable react-hooks/set-state-in-effect */ // syncs form to the opened transaction
   useEffect(() => {
@@ -177,7 +178,7 @@ export function TransactionDialog({
             <div className="space-y-2">
               <Label htmlFor="txn-category">Category</Label>
               <Select
-                value={categoryId ?? NONE}
+                value={categoryName ?? NONE}
                 onValueChange={(v) =>
                   setValue("category_id", v === NONE ? null : v, {
                     shouldDirty: true,
