@@ -240,7 +240,7 @@ function ExpensesPageContent() {
               <ChevronRight className="size-4" />
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid lg:grid-cols-3 grid-cols-2 gap-2">
             <div className="rounded-2xl bg-red-500/10 py-3 text-center">
               <p className="flex items-center justify-center gap-1 text-xs font-medium text-red-700 dark:text-red-300">
                 <TrendingDown className="size-3.5" aria-hidden /> Spent
@@ -259,7 +259,7 @@ function ExpensesPageContent() {
             </div>
             <div
               className={cn(
-                "rounded-2xl p-3 text-center",
+                "rounded-2xl p-3 text-center transition lg:col-span-1 col-span-2",
                 net >= 0 ? "bg-green-600/10" : "bg-red-500/10",
               )}
             >
