@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   Plus,
   Search,
@@ -11,6 +12,7 @@ import {
   TrendingUp,
   TrendingDown,
   Scale,
+  BarChart3,
 } from "lucide-react";
 import {
   useTransactions,
@@ -26,7 +28,7 @@ import {
 import { CreateFab } from "@/components/create-fab";
 import type { ExpenseTransaction, ExpenseCategory } from "@/lib/types";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -193,6 +195,15 @@ function ExpensesPageContent() {
         title="Expenses"
         actions={
           <>
+            <Link
+              href="/expenses/stats"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "default" }),
+                "hidden h-9 gap-1 md:inline-flex",
+              )}
+            >
+              <BarChart3 className="size-4" /> Stats
+            </Link>
             <Button
               variant="outline"
               className="hidden h-9 md:inline-flex"
