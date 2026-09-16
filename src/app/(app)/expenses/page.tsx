@@ -198,11 +198,11 @@ function ExpensesPageContent() {
             <Link
               href="/expenses/stats"
               className={cn(
-                buttonVariants({ variant: "outline", size: "default" }),
-                "hidden h-9 gap-1 md:inline-flex",
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "h-8 gap-1",
               )}
             >
-              <BarChart3 className="size-4" /> Stats
+              <BarChart3 className="size-3.5" /> Stats
             </Link>
             <Button
               variant="outline"
