@@ -27,6 +27,8 @@ import {
   Highlighter,
   Undo2,
   Redo2,
+  IndentIncrease,
+  IndentDecrease,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -139,6 +141,12 @@ export function MarkdownEditor({
         <ToolbarItem label="Task list" active={is((e) => e.isActive("taskList"))} onClick={run(() => editor.chain().focus().toggleTaskList().run())}>
           <ListChecks className="size-3.5" />
         </ToolbarItem>
+        <ToolbarItem label="Indent" onClick={run(() => editor.chain().focus().sinkListItem("listItem").run())}>
+          <IndentIncrease className="size-3.5" />
+        </ToolbarItem>
+        <ToolbarItem label="Outdent" onClick={run(() => editor.chain().focus().liftListItem("listItem").run())}>
+          <IndentDecrease className="size-3.5" />
+        </ToolbarItem>
         <ToolbarItem label="Quote" active={is((e) => e.isActive("blockquote"))} onClick={run(() => editor.chain().focus().toggleBlockquote().run())}>
           <Quote className="size-3.5" />
         </ToolbarItem>
@@ -188,6 +196,12 @@ export function MarkdownEditor({
         <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
         <BubbleItem label="Bullet list" active={is((e) => e.isActive("bulletList"))} onClick={run(() => editor.chain().focus().toggleBulletList().run())}>
           <List />
+        </BubbleItem>
+        <BubbleItem label="Indent" onClick={run(() => editor.chain().focus().sinkListItem("listItem").run())}>
+          <IndentIncrease />
+        </BubbleItem>
+        <BubbleItem label="Outdent" onClick={run(() => editor.chain().focus().liftListItem("listItem").run())}>
+          <IndentDecrease />
         </BubbleItem>
         <BubbleItem label="Quote" active={is((e) => e.isActive("blockquote"))} onClick={run(() => editor.chain().focus().toggleBlockquote().run())}>
           <Quote />

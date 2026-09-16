@@ -203,6 +203,11 @@
 .tiptap ul { list-style: disc; }
 .tiptap ol { list-style: decimal; }
 .tiptap li > p { margin: 0; }
+.tiptap ul ul { list-style: circle; }
+.tiptap ul ul ul { list-style: square; }
+.tiptap ol ol { list-style: lower-alpha; }
+.tiptap ol ol ol { list-style: lower-roman; }
+.tiptap li { margin: 0.125rem 0; }
 .tiptap blockquote {
   background: var(--muted);
   border-radius: 1rem;
