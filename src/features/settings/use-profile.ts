@@ -3,18 +3,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { profileKeys, fetchProfile } from "@/lib/supabase/fetchers"
 import type { Profile } from "@/lib/types"
+
+export { profileKeys }
 
 export function useProfile() {
   const q = useQuery({
-    queryKey: ["profile"],
-    queryFn: async () => {
-      const { data } = await getSupabaseBrowserClient()
-        .from("profiles")
-        .select("*")
-        .single()
-      return data as Profile | null
-    },
+    queryKey: profileKeys.all,
+    queryFn: () => fetchProfile(getSupabaseBrowserClient()),
   })
   return q
 }

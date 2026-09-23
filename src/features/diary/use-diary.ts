@@ -3,29 +3,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import type { DiaryEntry } from "@/lib/types"
+import { diaryKeys, fetchDiaryEntries } from "@/lib/supabase/fetchers"
 import type { DiaryFormValues } from "@/lib/schemas"
 
-export const diaryKeys = {
-  all: ["diary_entries"] as const,
-}
+export { diaryKeys }
 
 export function useDiaryEntries() {
   return useQuery({
     queryKey: diaryKeys.all,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const yearAgo = new Date()
-      yearAgo.setFullYear(yearAgo.getFullYear() - 1)
-      const { data, error } = await sb
-        .from("diary_entries")
-        .select("*")
-        .gte("entry_date", yearAgo.toISOString().slice(0, 10))
-        .order("entry_date", { ascending: false })
-        .limit(800)
-      if (error) throw error
-      return (data ?? []) as DiaryEntry[]
-    },
+    queryFn: () => fetchDiaryEntries(getSupabaseBrowserClient()),
   })
 }
 

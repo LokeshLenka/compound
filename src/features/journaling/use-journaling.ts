@@ -3,26 +3,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { journalKeys, fetchJournalEntries } from "@/lib/supabase/fetchers"
 import type { JournalEntry } from "@/lib/types"
 import type { JournalFormValues } from "@/lib/schemas"
 
-export const journalKeys = {
-  all: ["journal_entries"] as const,
-}
+export { journalKeys }
 
 export function useJournalEntries() {
   return useQuery({
     queryKey: journalKeys.all,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from("journal_entries")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(500)
-      if (error) throw error
-      return (data ?? []) as JournalEntry[]
-    },
+    queryFn: () => fetchJournalEntries(getSupabaseBrowserClient()),
   })
 }
 

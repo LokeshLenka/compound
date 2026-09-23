@@ -3,26 +3,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { tasksKeys, fetchTasks } from "@/lib/supabase/fetchers"
 import type { Task, TaskStatus } from "@/lib/types"
 import type { TaskFormValues } from "@/lib/schemas"
 
-export const tasksKeys = {
-  all: ["tasks"] as const,
-}
+export { tasksKeys }
 
 export function useTasks() {
   return useQuery({
     queryKey: tasksKeys.all,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from("tasks")
-        .select("*")
-        .order("sort_order")
-        .order("created_at", { ascending: false })
-      if (error) throw error
-      return (data ?? []) as Task[]
-    },
+    queryFn: () => fetchTasks(getSupabaseBrowserClient()),
   })
 }
 

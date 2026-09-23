@@ -3,66 +3,38 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
-import type {
-  ExpenseCategory,
-  ExpenseTransaction,
-  ExpenseBudget,
-} from "@/lib/types"
+import {
+  expenseKeys,
+  fetchBudgets,
+  fetchCategories,
+  fetchTransactions,
+} from "@/lib/supabase/fetchers"
 import type {
   ExpenseCategoryFormValues,
   ExpenseTransactionFormValues,
   ExpenseBudgetFormValues,
 } from "@/lib/schemas"
 
-export const expenseKeys = {
-  transactions: ["expense_transactions"] as const,
-  categories: ["expense_categories"] as const,
-  budgets: ["expense_budgets"] as const,
-}
+export { expenseKeys }
 
 export function useTransactions() {
   return useQuery({
     queryKey: expenseKeys.transactions,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from("expense_transactions")
-        .select("*")
-        .order("date", { ascending: false })
-        .limit(500)
-      if (error) throw error
-      return (data ?? []) as ExpenseTransaction[]
-    },
+    queryFn: () => fetchTransactions(getSupabaseBrowserClient()),
   })
 }
 
 export function useCategories() {
   return useQuery({
     queryKey: expenseKeys.categories,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from("expense_categories")
-        .select("*")
-        .order("name", { ascending: true })
-      if (error) throw error
-      return (data ?? []) as ExpenseCategory[]
-    },
+    queryFn: () => fetchCategories(getSupabaseBrowserClient()),
   })
 }
 
 export function useBudgets() {
   return useQuery({
     queryKey: expenseKeys.budgets,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from("expense_budgets")
-        .select("*")
-        .order("created_at", { ascending: false })
-      if (error) throw error
-      return (data ?? []) as ExpenseBudget[]
-    },
+    queryFn: () => fetchBudgets(getSupabaseBrowserClient()),
   })
 }
 

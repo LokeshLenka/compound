@@ -3,27 +3,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { notesKeys, fetchNotes } from "@/lib/supabase/fetchers"
 import type { Note } from "@/lib/types"
 import type { NoteFormValues } from "@/lib/schemas"
 
-export const notesKeys = {
-  all: ["notes"] as const,
-}
+export { notesKeys }
 
 export function useNotes() {
   return useQuery({
     queryKey: notesKeys.all,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from("notes")
-        .select("*")
-        .eq("archived", false)
-        .order("is_pinned", { ascending: false })
-        .order("updated_at", { ascending: false })
-      if (error) throw error
-      return (data ?? []) as Note[]
-    },
+    queryFn: () => fetchNotes(getSupabaseBrowserClient()),
   })
 }
 

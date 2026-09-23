@@ -3,44 +3,27 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import {
+  habitsKeys,
+  fetchHabits,
+  fetchHabitLogs,
+} from "@/lib/supabase/fetchers"
 import type { Habit, HabitLog } from "@/lib/types"
 import type { HabitFormValues } from "@/lib/schemas"
 
-export const habitsKeys = {
-  all: ["habits"] as const,
-  logs: ["habit_logs"] as const,
-}
+export { habitsKeys }
 
 export function useHabits() {
   return useQuery({
     queryKey: habitsKeys.all,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from("habits")
-        .select("*")
-        .eq("archived", false)
-        .order("sort_order")
-        .order("created_at")
-      if (error) throw error
-      return (data ?? []) as Habit[]
-    },
+    queryFn: () => fetchHabits(getSupabaseBrowserClient()),
   })
 }
 
 export function useHabitLogs() {
   return useQuery({
     queryKey: habitsKeys.logs,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const { data, error } = await sb
-        .from("habit_logs")
-        .select("*")
-        .order("log_date", { ascending: false })
-        .limit(500)
-      if (error) throw error
-      return (data ?? []) as HabitLog[]
-    },
+    queryFn: () => fetchHabitLogs(getSupabaseBrowserClient()),
   })
 }
 

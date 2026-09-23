@@ -2,31 +2,17 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { subDays } from "date-fns"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { waterKeys, fetchWaterLogs, fetchWaterSettings } from "@/lib/supabase/fetchers"
 import type { Profile, WaterLog } from "@/lib/types"
 import type { WaterSettingsFormValues } from "@/lib/schemas"
 
-export const waterKeys = {
-  logs: ["water_logs"] as const,
-  profile: ["profile"] as const,
-}
+export { waterKeys }
 
 export function useWaterLogs() {
   return useQuery({
     queryKey: waterKeys.logs,
-    queryFn: async () => {
-      const sb = getSupabaseBrowserClient()
-      const from = subDays(new Date(), 60).toISOString()
-      const { data, error } = await sb
-        .from("water_intake_logs")
-        .select("*")
-        .gte("drank_at", from)
-        .order("drank_at", { ascending: false })
-        .limit(300)
-      if (error) throw error
-      return (data ?? []) as WaterLog[]
-    },
+    queryFn: () => fetchWaterLogs(getSupabaseBrowserClient()),
   })
 }
 
@@ -132,16 +118,7 @@ export function useDeleteWater() {
 export function useWaterSettings() {
   return useQuery({
     queryKey: waterKeys.profile,
-    queryFn: async () => {
-      const { data } = await getSupabaseBrowserClient()
-        .from("profiles")
-        .select("water_goal_ml, water_unit, water_quick_amounts")
-        .single()
-      return (data ?? null) as Pick<
-        Profile,
-        "water_goal_ml" | "water_unit" | "water_quick_amounts"
-      > | null
-    },
+    queryFn: () => fetchWaterSettings(getSupabaseBrowserClient()),
   })
 }
 
