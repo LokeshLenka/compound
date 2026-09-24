@@ -52,13 +52,13 @@ const NAV = [
 const MOBILE_PRIMARY = [
   { href: "/dashboard", label: "Dossier", icon: LayoutDashboard },
   { href: "/analytics", label: "Codex", icon: Radar },
-  { href: "/habits", label: "Quests", icon: Repeat },
   { href: "/tasks", label: "Gates", icon: ListChecks },
   { href: "/expenses", label: "Vault", icon: Wallet },
   { href: "/water", label: "Vitals", icon: Droplet },
 ];
 
 const MOBILE_MORE = [
+  { href: "/habits", label: "Quests", icon: Repeat },
   { href: "/diary", label: "Shadow Log", icon: BookOpen },
   { href: "/journal", label: "Chronicle", icon: NotebookPen },
   { href: "/notes", label: "Archives", icon: FileText },
