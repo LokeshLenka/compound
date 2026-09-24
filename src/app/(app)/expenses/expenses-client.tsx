@@ -872,7 +872,31 @@ function ExpensesPageContent() {
         debt={editingDebt}
       />
 
-      <CreateFab label="Add transaction" onClick={openNewTxn} />
+      <CreateFab
+        label={
+          tab === "debts"
+            ? "Add debt"
+            : tab === "categories"
+              ? "Add category"
+              : tab === "budgets"
+                ? "Add budget"
+                : "Add transaction"
+        }
+        onClick={() => {
+          if (tab === "debts") {
+            setEditingDebt(null);
+            setDebtOpen(true);
+          } else if (tab === "categories") {
+            setEditingCat(null);
+            setCatOpen(true);
+          } else if (tab === "budgets") {
+            setEditingBudget(null);
+            setBudgetOpen(true);
+          } else {
+            openNewTxn();
+          }
+        }}
+      />
     </div>
   );
 }

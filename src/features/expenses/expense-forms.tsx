@@ -30,6 +30,7 @@ import {
   useDeleteDebt,
 } from "@/features/expenses/use-expenses";
 import { colorSoft, HABIT_COLORS } from "@/lib/colors";
+import { todayISO } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,7 +113,7 @@ export function TransactionDialog({
         amount: "" as unknown as number,
         type: "expense",
         category_id: null,
-        date: new Date().toISOString().slice(0, 10),
+        date: todayISO(),
         note: "",
         recurring_interval: null,
       },
@@ -129,7 +130,7 @@ export function TransactionDialog({
         amount: (txn?.amount ?? "") as unknown as number,
         type: txn?.type ?? defaultType ?? "expense",
         category_id: txn?.category_id ?? null,
-        date: txn?.date?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+        date: txn?.date?.slice(0, 10) ?? todayISO(),
         note: txn?.note ?? "",
         recurring_interval: txn?.recurring_interval ?? null,
       });
