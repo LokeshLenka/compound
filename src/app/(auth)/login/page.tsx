@@ -112,7 +112,11 @@ function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         </p>
       )}
 
-      <Button type="submit" className="w-full min-h-10 font-mono tracking-widest" disabled={isSubmitting}>
+      <Button
+        type="submit"
+        className="w-full min-h-10 font-mono tracking-widest"
+        disabled={isSubmitting}
+      >
         {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
         {mode === "signin" ? "ENTER SYSTEM" : "AWAKEN"}
       </Button>
@@ -131,11 +135,12 @@ function LoginCard() {
           <h1 className="font-rajdhani text-3xl font-bold tracking-[0.18em] text-primary text-glow">
             SYSTEM
           </h1>
-          <p className="font-mono text-[0.68rem] tracking-[0.18em] text-primary/70">AWAKEN — BECOME A HUNTER</p>
-          <p className="mt-2 text-sm text-muted-foreground">Daily quests, gates & shadows — your private Hunter System.</p>
-        </div>
-        <div className="flex items-center gap-2 rounded border border-primary/20 bg-primary/5 px-3 py-1 font-mono text-[0.62rem] tracking-widest text-primary">
-          <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" /> SYSTEM SECURE — RLS ISOLATED
+          <p className="font-mono text-[0.68rem] tracking-[0.18em] text-primary/70">
+            AWAKEN — BECOME A HUNTER
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Daily quests, gates & shadows — your Hunter System.
+          </p>
         </div>
       </div>
 
@@ -143,10 +148,16 @@ function LoginCard() {
         <CardContent className="pt-6">
           <Tabs defaultValue="signin">
             <TabsList className="grid w-full grid-cols-2 gap-1 rounded-md p-1 bg-muted/40 border border-primary/10">
-              <TabsTrigger value="signin" className="rounded-md font-mono text-xs tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger
+                value="signin"
+                className="rounded-md font-mono text-xs tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 SIGN IN
               </TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-md font-mono text-xs tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger
+                value="signup"
+                className="rounded-md font-mono text-xs tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
                 AWAKEN
               </TabsTrigger>
             </TabsList>
@@ -159,12 +170,6 @@ function LoginCard() {
           </Tabs>
         </CardContent>
       </Card>
-
-      <p className="mt-6 text-center font-mono text-[0.62rem] leading-relaxed tracking-widest text-muted-foreground">
-        YOUR DATA STAYS PRIVATE TO YOUR ACCOUNT.
-        <br />
-        BUILT FOR THE LONG GAME — ARISE, HUNTER.
-      </p>
     </div>
   );
 }
