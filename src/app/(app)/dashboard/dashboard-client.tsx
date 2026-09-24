@@ -374,8 +374,7 @@ export default function DashboardPage() {
                   whileTap={{ scale: 0.98 }}
                   className="inline-flex h-12 items-center justify-center gap-1.5 rounded-md border border-sky-400/25 bg-sky-500/10 text-sm font-mono font-bold tracking-widest text-sky-400 transition-colors hover:bg-sky-500/15 hover:border-sky-400/40 active:scale-[0.98] disabled:opacity-50"
                 >
-                  <PlusCircle className="size-4" />+
-                  {formatAmount(amt, waterUnit)}
+                  +{formatAmount(amt, waterUnit)}
                 </motion.button>
               ))}
             </div>
@@ -672,7 +671,7 @@ function HabitDashboardRow({
           {habit.name}
         </p>
         <p className="font-mono text-[0.62rem] tracking-widest text-muted-foreground">
-          {done ? "◆ QUEST CLEAR ◆ +10 XP" : ""}
+          {done ? "◆ +10 XP" : ""}
         </p>
       </div>
       <AnimatePresence mode="wait">
