@@ -112,9 +112,9 @@ function AuthForm({ mode }: { mode: "signin" | "signup" }) {
         </p>
       )}
 
-      <Button type="submit" className="w-full min-h-10" disabled={isSubmitting}>
+      <Button type="submit" className="w-full min-h-10 font-mono tracking-widest" disabled={isSubmitting}>
         {isSubmitting && <Loader2 className="mr-2 size-4 animate-spin" />}
-        {mode === "signin" ? "Sign in" : "Create account"}
+        {mode === "signin" ? "ENTER SYSTEM" : "AWAKEN"}
       </Button>
     </form>
   );
@@ -124,25 +124,30 @@ function LoginCard() {
   return (
     <div className="w-full max-w-sm">
       <div className="mb-6 flex flex-col items-center gap-3 text-center">
+        <div className="grid size-12 place-items-center rounded border border-primary/30 bg-primary/10 text-primary shadow-[0_0_18px_rgba(168,85,247,0.35)]">
+          <span className="font-mono text-xl">◈</span>
+        </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Compound
+          <h1 className="font-rajdhani text-3xl font-bold tracking-[0.18em] text-primary text-glow">
+            SYSTEM
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Habits, tasks, notes &amp; diary in one private place.
-          </p>
+          <p className="font-mono text-[0.68rem] tracking-[0.18em] text-primary/70">AWAKEN — BECOME A HUNTER</p>
+          <p className="mt-2 text-sm text-muted-foreground">Daily quests, gates & shadows — your private Hunter System.</p>
+        </div>
+        <div className="flex items-center gap-2 rounded border border-primary/20 bg-primary/5 px-3 py-1 font-mono text-[0.62rem] tracking-widest text-primary">
+          <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" /> SYSTEM SECURE — RLS ISOLATED
         </div>
       </div>
 
-      <Card className="w-full border-border/60">
+      <Card className="w-full">
         <CardContent className="pt-6">
           <Tabs defaultValue="signin">
-            <TabsList className="grid w-full grid-cols-2 gap-1 rounded-full p-1">
-              <TabsTrigger value="signin" className="rounded-full">
-                Sign in
+            <TabsList className="grid w-full grid-cols-2 gap-1 rounded-md p-1 bg-muted/40 border border-primary/10">
+              <TabsTrigger value="signin" className="rounded-md font-mono text-xs tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                SIGN IN
               </TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-full">
-                Create account
+              <TabsTrigger value="signup" className="rounded-md font-mono text-xs tracking-widest data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                AWAKEN
               </TabsTrigger>
             </TabsList>
             <TabsContent value="signin" className="mt-5">
@@ -155,10 +160,10 @@ function LoginCard() {
         </CardContent>
       </Card>
 
-      <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
-        Your data stays private to your account.
+      <p className="mt-6 text-center font-mono text-[0.62rem] leading-relaxed tracking-widest text-muted-foreground">
+        YOUR DATA STAYS PRIVATE TO YOUR ACCOUNT.
         <br />
-        Built for the long game — daily streaks, quiet notes, one journal.
+        BUILT FOR THE LONG GAME — ARISE, HUNTER.
       </p>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -18,11 +18,14 @@ import {
   useTransactions,
   useCategories,
   useBudgets,
+  useDebts,
+  useToggleDebtPaid,
 } from "@/features/expenses/use-expenses";
 import {
   TransactionDialog,
   CategoryDialog,
   BudgetDialog,
+  DebtDialog,
   CategoryEmoji,
 } from "@/features/expenses/expense-forms";
 import { CreateFab } from "@/components/create-fab";
@@ -60,7 +63,146 @@ function periodStart(
   return d;
 }
 
-type Tab = "transactions" | "categories" | "budgets";
+function ExpenseSummaryCarousel({
+  spent,
+  earned,
+  net,
+  totalDebt,
+  totalOwe,
+  netDebt,
+  slide,
+  onSlideChange,
+}: {
+  spent: number;
+  earned: number;
+  net: number;
+  totalDebt: number;
+  totalOwe: number;
+  netDebt: number;
+  slide: number;
+  onSlideChange: (n: number) => void;
+}) {
+  const startX = useRef<number | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (startX.current == null) return;
+    const dx = e.changedTouches[0].clientX - startX.current;
+    if (dx < -40 && slide === 0) onSlideChange(1);
+    if (dx > 40 && slide === 1) onSlideChange(0);
+    startX.current = null;
+  };
+  return (
+    <div className="space-y-2">
+      <div
+        className="overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        <div
+          className="flex transition-transform duration-300 ease-out"
+          style={{ transform: `translateX(-${slide * 100}%)` }}
+        >
+          <div className="min-w-full grid lg:grid-cols-3 grid-cols-2 gap-2 pr-2">
+            <div className="rounded-2xl bg-red-500/10 py-3 text-center">
+              <p className="flex items-center justify-center gap-1 text-xs font-medium text-red-700 dark:text-red-300">
+                <TrendingDown className="size-3.5" aria-hidden /> Spent
+              </p>
+              <p className="mt-0.5 truncate text-lg font-bold tabular-nums text-red-700 dark:text-red-300">
+                {fmt(spent)}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-green-600/10 p-3 text-center">
+              <p className="flex items-center justify-center gap-1 text-xs font-medium text-green-700 dark:text-green-300">
+                <TrendingUp className="size-3.5" aria-hidden /> Earned
+              </p>
+              <p className="mt-0.5 truncate text-lg font-bold tabular-nums text-green-700 dark:text-green-300">
+                {fmt(earned)}
+              </p>
+            </div>
+            <div
+              className={cn(
+                "rounded-2xl p-3 text-center transition lg:col-span-1 col-span-2",
+                net >= 0 ? "bg-green-600/10" : "bg-red-500/10",
+              )}
+            >
+              <p className="flex items-center justify-center gap-1 text-xs font-medium text-muted-foreground">
+                <Scale className="size-3.5" aria-hidden /> Net
+              </p>
+              <p
+                className={cn(
+                  "mt-0.5 truncate text-lg font-bold tabular-nums",
+                  net >= 0
+                    ? "text-green-700 dark:text-green-300"
+                    : "text-red-700 dark:text-red-300",
+                )}
+              >
+                {net >= 0 ? "+" : "-"}
+                {fmt(Math.abs(net))}
+              </p>
+            </div>
+          </div>
+          <div className="min-w-full grid lg:grid-cols-3 grid-cols-2 gap-2 pl-2">
+            <div className="rounded-2xl bg-red-500/10 py-3 text-center">
+              <p className="flex items-center justify-center gap-1 text-xs font-medium text-red-700 dark:text-red-300">
+                <TrendingDown className="size-3.5" aria-hidden /> Debt
+              </p>
+              <p className="mt-0.5 truncate text-lg font-bold tabular-nums text-red-700 dark:text-red-300">
+                −{fmt(totalDebt)}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-green-600/10 p-3 text-center">
+              <p className="flex items-center justify-center gap-1 text-xs font-medium text-green-700 dark:text-green-300">
+                <TrendingUp className="size-3.5" aria-hidden /> Owe
+              </p>
+              <p className="mt-0.5 truncate text-lg font-bold tabular-nums text-green-700 dark:text-green-300">
+                +{fmt(totalOwe)}
+              </p>
+            </div>
+            <div
+              className={cn(
+                "rounded-2xl p-3 text-center transition lg:col-span-1 col-span-2",
+                netDebt >= 0 ? "bg-green-600/10" : "bg-red-500/10",
+              )}
+            >
+              <p className="flex items-center justify-center gap-1 text-xs font-medium text-muted-foreground">
+                <Scale className="size-3.5" aria-hidden /> Net
+              </p>
+              <p
+                className={cn(
+                  "mt-0.5 truncate text-lg font-bold tabular-nums",
+                  netDebt >= 0
+                    ? "text-green-700 dark:text-green-300"
+                    : "text-red-700 dark:text-red-300",
+                )}
+              >
+                {netDebt >= 0 ? "+" : ""}
+                {fmt(netDebt)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex items-center justify-center gap-1.5">
+        {[0, 1].map((i) => (
+          <button
+            key={i}
+            type="button"
+            aria-label={`Go to slide ${i + 1}`}
+            onClick={() => onSlideChange(i)}
+            className={cn(
+              "h-1.5 rounded-full transition-all",
+              slide === i ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30",
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type Tab = "transactions" | "categories" | "budgets" | "debts";
 
 export default function ExpensesPage() {
   return (
@@ -83,6 +225,8 @@ function ExpensesPageContent() {
   const { data: txns, isLoading: txnsLoading } = useTransactions();
   const { data: categories = [], isLoading: catsLoading } = useCategories();
   const { data: budgets = [] } = useBudgets();
+  const { data: debts = [], isLoading: debtsLoading } = useDebts();
+  const toggleDebtPaid = useToggleDebtPaid();
 
   const [tab, setTab] = useState<Tab>("transactions");
   const [monthOffset, setMonthOffset] = useState(0);
@@ -98,6 +242,17 @@ function ExpensesPageContent() {
   const [editingBudget, setEditingBudget] = useState<
     (typeof budgets)[number] | null
   >(null);
+  const [debtOpen, setDebtOpen] = useState(false);
+  const [editingDebt, setEditingDebt] = useState<(typeof debts)[number] | null>(
+    null,
+  );
+  const [debtFilter, setDebtFilter] = useState<"all" | "debt" | "owe">("all");
+  const [carouselSlide, setCarouselSlide] = useState(0);
+
+  useEffect(() => {
+    if (tab === "debts") setCarouselSlide(1);
+    else setCarouselSlide(0);
+  }, [tab]);
 
   useEffect(() => {
     if (searchParams.get("create")) {
@@ -155,10 +310,52 @@ function ExpensesPageContent() {
             : false),
       );
     }
-    return [...list].sort((a, b) =>
-      a.date < b.date ? 1 : a.date > b.date ? -1 : 0,
-    );
+    return [...list].sort((a, b) => {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      // same day: newest first by created_at, then updated_at, then id for stability
+      if (a.created_at !== b.created_at)
+        return a.created_at < b.created_at ? 1 : -1;
+      if (a.updated_at !== b.updated_at)
+        return a.updated_at < b.updated_at ? 1 : -1;
+      return a.id < b.id ? 1 : -1;
+    });
   }, [monthTxns, typeFilter, query, catById]);
+
+  const visibleDebts = useMemo(() => {
+    let list = debts ?? [];
+    if (debtFilter !== "all") list = list.filter((d) => d.type === debtFilter);
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      list = list.filter(
+        (d) =>
+          d.person_name.toLowerCase().includes(q) ||
+          (d.note ?? "").toLowerCase().includes(q),
+      );
+    }
+    return [...list].sort((a, b) => {
+      // pending first, then overdue, then paid
+      const order = { pending: 0, overdue: 1, paid: 2 } as const;
+      if (order[a.status] !== order[b.status])
+        return order[a.status] - order[b.status];
+      if (a.due_date && b.due_date)
+        return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0;
+      if (a.due_date && !b.due_date) return -1;
+      if (!a.due_date && b.due_date) return 1;
+      return a.created_at < b.created_at ? 1 : -1;
+    });
+  }, [debts, debtFilter, query]);
+
+  const debtStats = useMemo(() => {
+    const pendingDebts = debts.filter(
+      (d) => d.type === "debt" && d.status !== "paid",
+    );
+    const pendingOwes = debts.filter(
+      (d) => d.type === "owe" && d.status !== "paid",
+    );
+    const totalDebt = pendingDebts.reduce((s, d) => s + Number(d.amount), 0);
+    const totalOwe = pendingOwes.reduce((s, d) => s + Number(d.amount), 0);
+    return { totalDebt, totalOwe, net: totalOwe - totalDebt };
+  }, [debts]);
 
   const budgetProgress = useMemo(() => {
     const now = new Date();
@@ -221,7 +418,7 @@ function ExpensesPageContent() {
         }
       />
 
-      {/* Month summary */}
+      {/* Month summary — carousel: Spent/Earned/Net ↔ Owe/Debt/Net */}
       <Card>
         <CardContent className="space-y-3">
           <div className="flex items-center justify-between">
@@ -251,56 +448,30 @@ function ExpensesPageContent() {
               <ChevronRight className="size-4" />
             </button>
           </div>
-          <div className="grid lg:grid-cols-3 grid-cols-2 gap-2">
-            <div className="rounded-2xl bg-red-500/10 py-3 text-center">
-              <p className="flex items-center justify-center gap-1 text-xs font-medium text-red-700 dark:text-red-300">
-                <TrendingDown className="size-3.5" aria-hidden /> Spent
-              </p>
-              <p className="mt-0.5 truncate text-lg font-bold tabular-nums text-red-700 dark:text-red-300">
-                {fmt(spent)}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-green-600/10 p-3 text-center">
-              <p className="flex items-center justify-center gap-1 text-xs font-medium text-green-700 dark:text-green-300">
-                <TrendingUp className="size-3.5" aria-hidden /> Earned
-              </p>
-              <p className="mt-0.5 truncate text-lg font-bold tabular-nums text-green-700 dark:text-green-300">
-                {fmt(earned)}
-              </p>
-            </div>
-            <div
-              className={cn(
-                "rounded-2xl p-3 text-center transition lg:col-span-1 col-span-2",
-                net >= 0 ? "bg-green-600/10" : "bg-red-500/10",
-              )}
-            >
-              <p className="flex items-center justify-center gap-1 text-xs font-medium text-muted-foreground">
-                <Scale className="size-3.5" aria-hidden /> Net
-              </p>
-              <p
-                className={cn(
-                  "mt-0.5 truncate text-lg font-bold tabular-nums",
-                  net >= 0
-                    ? "text-green-700 dark:text-green-300"
-                    : "text-red-700 dark:text-red-300",
-                )}
-              >
-                {net >= 0 ? "+" : "-"}
-                {fmt(Math.abs(net))}
-              </p>
-            </div>
-          </div>
+          <ExpenseSummaryCarousel
+            spent={spent}
+            earned={earned}
+            net={net}
+            totalDebt={debtStats.totalDebt}
+            totalOwe={debtStats.totalOwe}
+            netDebt={debtStats.net}
+            slide={carouselSlide}
+            onSlideChange={setCarouselSlide}
+          />
         </CardContent>
       </Card>
 
       {/* Tabs */}
       <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
         <TabsList
-          className="grid w-full grid-cols-3 rounded-full bg-muted/70 p-1"
+          className="grid w-full grid-cols-4 rounded-full bg-muted/70 p-1"
           aria-label="Expenses views"
         >
           <TabsTrigger value="transactions" className="rounded-full">
             Transactions
+          </TabsTrigger>
+          <TabsTrigger value="debts" className="rounded-full">
+            Debts
           </TabsTrigger>
           <TabsTrigger value="categories" className="rounded-full">
             Categories
@@ -545,6 +716,137 @@ function ExpensesPageContent() {
             )}
           </div>
         </TabsContent>
+
+        <TabsContent value="debts">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1 rounded-full bg-muted/70 p-1">
+                {(["all", "debt", "owe"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={debtFilter === t}
+                    onClick={() => setDebtFilter(t)}
+                    className={cn(
+                      "h-8 rounded-full px-3 text-xs font-medium capitalize",
+                      debtFilter === t
+                        ? "bg-card shadow-sm"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {t === "all" ? "All" : t === "debt" ? "Debts" : "Owes"}
+                  </button>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                className="ml-auto h-8"
+                onClick={() => {
+                  setEditingDebt(null);
+                  setDebtOpen(true);
+                }}
+              >
+                <Plus className="mr-1 size-3.5" /> Add debt
+              </Button>
+            </div>
+            {debtsLoading ? (
+              <div className="space-y-2">
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : visibleDebts.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <p className="text-sm">
+                    No {debtFilter === "all" ? "" : debtFilter} debts yet.
+                  </p>
+                  <Button
+                    className="mt-4"
+                    onClick={() => {
+                      setEditingDebt(null);
+                      setDebtOpen(true);
+                    }}
+                  >
+                    <Plus className="mr-1 size-4" /> Add debt / owe
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="divide-y divide-border/60 p-0">
+                  {visibleDebts.map((d) => (
+                    <div
+                      key={d.id}
+                      className="flex items-center gap-3 px-4 py-3"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingDebt(d);
+                          setDebtOpen(true);
+                        }}
+                        className="flex flex-1 items-center gap-3 text-left"
+                      >
+                        <span
+                          className={cn(
+                            "grid size-8 place-items-center rounded-full text-xs font-bold text-white",
+                            d.type === "debt" ? "bg-red-500" : "bg-green-600",
+                          )}
+                        >
+                          {d.type === "debt" ? "D" : "O"}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium">
+                            {d.person_name}
+                          </span>
+                          <span className="block text-xs text-muted-foreground">
+                            {d.note ||
+                              (d.due_date
+                                ? `Due ${format(new Date(d.due_date), "MMM d, yyyy")}`
+                                : "No due date")}{" "}
+                            ·{" "}
+                            <span
+                              className={cn(
+                                d.status === "paid"
+                                  ? "text-green-600"
+                                  : d.status === "overdue"
+                                    ? "text-destructive"
+                                    : "text-muted-foreground",
+                              )}
+                            >
+                              {d.status}
+                            </span>
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "shrink-0 text-sm font-semibold tabular-nums",
+                            d.type === "debt"
+                              ? "text-red-600 dark:text-red-400"
+                              : "text-green-600 dark:text-green-400",
+                          )}
+                        >
+                          {d.type === "debt" ? "−" : "+"}
+                          {fmt(Number(d.amount))}
+                        </span>
+                      </button>
+                      <Button
+                        size="sm"
+                        variant={d.status === "paid" ? "outline" : "default"}
+                        className="h-8 shrink-0"
+                        onClick={() => toggleDebtPaid.mutate(d.id)}
+                        disabled={toggleDebtPaid.isPending}
+                      >
+                        {d.status === "paid" ? "Undo" : "Paid"}
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
       </Tabs>
 
       <TransactionDialog
@@ -563,6 +865,11 @@ function ExpensesPageContent() {
         onOpenChange={setBudgetOpen}
         budget={editingBudget}
         categories={categories}
+      />
+      <DebtDialog
+        open={debtOpen}
+        onOpenChange={setDebtOpen}
+        debt={editingDebt}
       />
 
       <CreateFab label="Add transaction" onClick={openNewTxn} />

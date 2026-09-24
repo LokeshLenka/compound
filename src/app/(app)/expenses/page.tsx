@@ -5,7 +5,9 @@ import {
   fetchTransactions,
   fetchCategories,
   fetchBudgets,
+  fetchDebts,
   expenseKeys,
+  debtsKeys,
 } from "@/lib/supabase/fetchers"
 import ExpensesClient from "./expenses-client"
 
@@ -16,6 +18,7 @@ export default async function Page() {
     qc.prefetchQuery({ queryKey: expenseKeys.transactions, queryFn: () => fetchTransactions(supabase) }),
     qc.prefetchQuery({ queryKey: expenseKeys.categories, queryFn: () => fetchCategories(supabase) }),
     qc.prefetchQuery({ queryKey: expenseKeys.budgets, queryFn: () => fetchBudgets(supabase) }),
+    qc.prefetchQuery({ queryKey: debtsKeys.all, queryFn: () => fetchDebts(supabase) }),
   ])
   return (
     <HydrationBoundary state={dehydrate(qc)}>

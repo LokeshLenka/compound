@@ -103,3 +103,14 @@ export const expenseBudgetSchema = z.object({
 })
 
 export type ExpenseBudgetFormValues = z.input<typeof expenseBudgetSchema>
+
+export const debtSchema = z.object({
+  person_name: z.string().trim().min(1, "Name is required").max(80),
+  amount: z.coerce.number().positive("Amount must be positive"),
+  type: z.enum(["debt", "owe"]).default("debt"),
+  status: z.enum(["pending", "paid", "overdue"]).default("pending"),
+  due_date: z.string().nullable().default(null),
+  note: z.string().default(""),
+})
+
+export type DebtFormValues = z.input<typeof debtSchema>

@@ -25,14 +25,17 @@ import { useTasks, useSetTaskStatus } from "@/features/tasks/use-tasks";
 import { useNotes } from "@/features/notes/use-notes";
 import { useDiaryEntries } from "@/features/diary/use-diary";
 import { useJournalEntries } from "@/features/journaling/use-journaling";
-import { useTransactions, useCategories } from "@/features/expenses/use-expenses";
+import {
+  useTransactions,
+  useCategories,
+} from "@/features/expenses/use-expenses";
 import {
   useWaterLogs,
   useWaterSettings,
   useAddWater,
 } from "@/features/water/use-water";
+import { useProfile } from "@/features/settings/use-profile";
 import { isDueToday } from "@/lib/habits";
-import { colorSoft } from "@/lib/colors";
 import { todayISO, humanDate } from "@/lib/dates";
 import { totalMl, formatAmount, progressPct } from "@/lib/water";
 import { cn } from "@/lib/utils";
@@ -41,10 +44,17 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StaggerGrid, StaggerItem } from "@/components/stagger-grid";
-import { DashboardQuickAddMobile, DashboardQuickAddDesktop } from "@/components/dashboard-quick-add";
+import {
+  DashboardQuickAddMobile,
+  DashboardQuickAddDesktop,
+} from "@/components/dashboard-quick-add";
 import { TaskFormDialog } from "@/features/tasks/task-form";
 import { HabitFormDialog } from "@/features/habits/habit-form";
 import { TransactionDialog } from "@/features/expenses/expense-forms";
+import { SystemWindow } from "@/components/system/system-window";
+import { HudCard } from "@/components/system/hud-card";
+import { StatBar } from "@/components/system/stat-bar";
+import { GlobalRankCard } from "@/features/ranking/global-rank-card";
 
 function greeting(now = new Date()): string {
   const h = now.getHours();
@@ -52,6 +62,10 @@ function greeting(now = new Date()): string {
   if (h < 12) return "Good morning";
   if (h < 18) return "Good afternoon";
   return "Good evening";
+}
+
+function pctDisplay(n: number): string {
+  return String(Math.round(n)).padStart(2, "0");
 }
 
 export default function DashboardPage() {
@@ -65,11 +79,14 @@ export default function DashboardPage() {
   const { data: categories = [] } = useCategories();
   const { data: waterLogs = [] } = useWaterLogs();
   const { data: waterSettings } = useWaterSettings();
+  const { data: profile } = useProfile();
   const toggleLog = useToggleLog();
   const setStatus = useSetTaskStatus();
   const addWater = useAddWater();
 
-  const [quickAddOpen, setQuickAddOpen] = useState<"task" | "habit" | "transaction" | null>(null);
+  const [quickAddOpen, setQuickAddOpen] = useState<
+    "task" | "habit" | "transaction" | null
+  >(null);
 
   const today = todayISO();
   const now = new Date();
@@ -130,35 +147,61 @@ export default function DashboardPage() {
 
   const habitItems = [...completedHabits, ...pendingHabits];
 
+  const displayName = profile?.full_name?.trim() || "Hunter";
+
   return (
     <div className="space-y-5">
       <PageHeader
-        title="Dashboard"
+        title={displayName}
+        subtitle="SYSTEM // DAILY QUESTS"
         actions={
           <div className="hidden md:block">
-            <DashboardQuickAddDesktop onSelect={(type) => setQuickAddOpen(type)} />
+            <DashboardQuickAddDesktop
+              onSelect={(type) => setQuickAddOpen(type)}
+            />
           </div>
         }
       />
 
-      <motion.p
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="text-balance text-sm leading-relaxed text-muted-foreground"
-      >
-        {greeting(now)}, {humanDate(today, "EEEE, MMMM d")} —{" "}
-        {openCount === 0 ? (
-          <>everything is done. Enjoy your day.</>
-        ) : (
-          <>
-            {openCount} thing{openCount === 1 ? "" : "s"} open today. Start at
-            the top.
-          </>
-        )}
-      </motion.p>
+      <GlobalRankCard variant="compact" />
 
-      {/* Tasks Section */}
+      {/* Player Status Panel */}
+      <SystemWindow
+        title="PLAYER STATUS"
+        subtitle={`${humanDate(today, "yyyy.MM.dd")} — ${greeting(now).toUpperCase()} // ${openCount === 0 ? "ALL QUESTS CLEARED" : `${openCount} ACTIVE QUESTS`}`}
+        icon={<span className="font-mono text-[0.7rem]">◈</span>}
+        headerActions={<span className="font-mono text-[0.62rem] tracking-widest text-primary">{openCount} ACTIVE</span>}
+      >
+        <div className="grid gap-3 md:grid-cols-3">
+          <StatBar
+            label="QUESTS"
+            value={dueHabits.length - pendingHabits.length}
+            max={Math.max(1, dueHabits.length)}
+            color="primary"
+          />
+          <StatBar
+            label="GATES"
+            value={Math.max(0, 6 - openTasks.length)}
+            max={6}
+            color="violet"
+          />
+          <StatBar
+            label="VITALS"
+            value={Math.min(waterToday, waterGoal)}
+            max={waterGoal}
+            color="water"
+          />
+        </div>
+        <div className="mt-3 flex items-center gap-2 text-xs font-mono tracking-widest text-muted-foreground">
+          <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          SYSTEM ONLINE — {openCount === 0 ? "STANDBY MODE" : "COMBAT READY"}
+          <span className="ml-auto tabular-nums">
+            {pctDisplay(waterPct)}% SYNC
+          </span>
+        </div>
+      </SystemWindow>
+
+      {/* Gates — Tasks mapped to dungeon gates */}
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -166,29 +209,37 @@ export default function DashboardPage() {
         className="space-y-3"
       >
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-xl bg-chart-2/12 text-chart-2">
+          <CardTitle className="text-base flex items-center gap-2 font-mono tracking-widest text-sm">
+            <span className="grid size-8 place-items-center rounded border border-violet-400/30 bg-violet-500/10 text-violet-400">
               <ListChecks className="size-4" aria-hidden />
             </span>
-            Tasks
+            <span className="tracking-[0.14em]">GATES</span>
+            <span className="text-xs font-normal tracking-wide text-muted-foreground">
+              — MISSIONS
+            </span>
+            {openTasks.length > 0 && (
+              <span className="ml-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[0.62rem] tracking-widest text-primary">
+                {openTasks.length} OPEN
+              </span>
+            )}
           </CardTitle>
           <Link
             href="/tasks"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "h-8 rounded-full",
+              "h-7 rounded-md font-mono text-xs tracking-widest",
             )}
           >
-            All tasks <ArrowRight className="size-3.5" />
+            ENTER <ArrowRight className="size-3.5" />
           </Link>
         </div>
 
         {openTasks.length === 0 ? (
-          <Card>
-            <CardContent className="py-6 text-center text-sm text-muted-foreground">
-              All clear. Add a task to stay ahead.
+          <HudCard>
+            <CardContent className="py-6 text-center font-mono text-xs tracking-widest text-muted-foreground">
+              ◆ ALL GATES CLEARED ◆
             </CardContent>
-          </Card>
+          </HudCard>
         ) : (
           <StaggerGrid className="grid gap-2 sm:grid-cols-2">
             {openTasks.slice(0, 6).map((t, index) => (
@@ -209,7 +260,7 @@ export default function DashboardPage() {
         )}
       </motion.section>
 
-      {/* Habits Section */}
+      {/* Daily Quests — Habits */}
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -217,29 +268,34 @@ export default function DashboardPage() {
         className="space-y-3"
       >
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-xl bg-chart-1/12 text-chart-1">
+          <CardTitle className="text-base flex items-center gap-2 font-mono tracking-widest text-sm">
+            <span className="grid size-8 place-items-center rounded border border-primary/30 bg-primary/10 text-primary">
               <Repeat className="size-4" aria-hidden />
             </span>
-            Habits
+            <span className="tracking-[0.14em]">DAILY QUESTS</span>
+            {dueHabits.length > 0 && (
+              <span className="ml-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[0.62rem] tracking-widest text-primary">
+                {completedHabits.length}/{dueHabits.length} CLEAR
+              </span>
+            )}
           </CardTitle>
           <Link
             href="/habits"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "h-8 rounded-full",
+              "h-7 rounded-md font-mono text-xs tracking-widest",
             )}
           >
-            All habits <ArrowRight className="size-3.5" />
+            ALL <ArrowRight className="size-3.5" />
           </Link>
         </div>
 
         {dueHabits.length === 0 ? (
-          <Card>
-            <CardContent className="py-6 text-center text-sm text-muted-foreground">
-              Nothing due today. Enjoy it!
+          <HudCard>
+            <CardContent className="py-6 text-center font-mono text-xs tracking-widest text-muted-foreground">
+              ◆ NO QUESTS DUE — REST DAY ◆
             </CardContent>
-          </Card>
+          </HudCard>
         ) : (
           <StaggerGrid className="grid gap-2 sm:grid-cols-2">
             {habitItems.map((h, index) => (
@@ -258,7 +314,7 @@ export default function DashboardPage() {
         )}
       </motion.section>
 
-      {/* Water Tracking Section */}
+      {/* Vitals — Water as HP/Mana */}
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -266,33 +322,43 @@ export default function DashboardPage() {
         className="space-y-3"
       >
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <span className="grid size-8 place-items-center rounded-xl bg-chart-water/12 text-chart-water">
+          <CardTitle className="text-base flex items-center gap-2 font-mono tracking-widest text-sm">
+            <span className="grid size-8 place-items-center rounded border border-sky-400/30 bg-sky-500/10 text-sky-400">
               <Droplet className="size-4" aria-hidden />
             </span>
-            Water
+            <span className="tracking-[0.14em]">VITALS</span>
+            <span className="text-xs font-normal tracking-wide text-muted-foreground">
+              — HP / MANA
+            </span>
+            <span
+              className={cn(
+                "ml-1 rounded border px-1.5 py-0.5 font-mono text-[0.62rem] tracking-widest",
+                waterDone
+                  ? "border-emerald-400/30 bg-emerald-500/10 text-emerald-400"
+                  : "border-amber-400/30 bg-amber-500/10 text-amber-400",
+              )}
+            >
+              {waterDone ? "FULL" : "LOW"}
+            </span>
           </CardTitle>
           <Link
             href="/water"
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" }),
-              "h-8 rounded-full",
+              "h-7 rounded-md font-mono text-xs tracking-widest",
             )}
           >
-            Details <ArrowRight className="size-3.5" />
+            DETAILS <ArrowRight className="size-3.5" />
           </Link>
         </div>
 
-        <Card className="overflow-hidden">
+        <HudCard>
           <CardContent className="p-4 space-y-4">
-            {/* Progress Ring + Stats */}
             <WaterProgressRingCompact
               totalMl={waterToday}
               goalMl={waterGoal}
               unit={waterUnit}
             />
-
-            {/* Quick Add Buttons */}
             <div className="grid grid-cols-3 gap-2">
               {waterPresets.map((amt) => (
                 <motion.button
@@ -302,15 +368,18 @@ export default function DashboardPage() {
                   onClick={() => addWater.mutate({ amount_ml: amt })}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-chart-water/10 text-sm font-semibold text-chart-water transition-colors hover:bg-chart-water/20 active:scale-[0.98] disabled:opacity-50"
+                  className="inline-flex h-12 items-center justify-center gap-1.5 rounded-md border border-sky-400/25 bg-sky-500/10 text-sm font-mono font-bold tracking-widest text-sky-400 transition-colors hover:bg-sky-500/15 hover:border-sky-400/40 active:scale-[0.98] disabled:opacity-50"
                 >
-                  <PlusCircle className="size-4" />
+                  <PlusCircle className="size-4" />+
                   {formatAmount(amt, waterUnit)}
                 </motion.button>
               ))}
             </div>
+            <p className="text-center font-mono text-[0.62rem] tracking-[0.14em] text-muted-foreground">
+              HP RESTORED ON LOG — STAY HYDRATED, HUNTER
+            </p>
           </CardContent>
-        </Card>
+        </HudCard>
       </motion.section>
 
       {/* Diary & Notes Quick Access */}
@@ -528,15 +597,21 @@ export default function DashboardPage() {
 
       <TaskFormDialog
         open={quickAddOpen === "task"}
-        onOpenChange={(o) => { if (!o) setQuickAddOpen(null) }}
+        onOpenChange={(o) => {
+          if (!o) setQuickAddOpen(null);
+        }}
       />
       <HabitFormDialog
         open={quickAddOpen === "habit"}
-        onOpenChange={(o) => { if (!o) setQuickAddOpen(null) }}
+        onOpenChange={(o) => {
+          if (!o) setQuickAddOpen(null);
+        }}
       />
       <TransactionDialog
         open={quickAddOpen === "transaction"}
-        onOpenChange={(o) => { if (!o) setQuickAddOpen(null) }}
+        onOpenChange={(o) => {
+          if (!o) setQuickAddOpen(null);
+        }}
         categories={categories}
       />
     </div>
@@ -564,15 +639,21 @@ function HabitDashboardRow({
         damping: 30,
         delay: index * 0.03,
       }}
-      className="group relative flex items-center gap-3 rounded-2xl bg-card/80 p-3 border border-border/50 hover:border-primary/20 transition-colors"
+      className={cn(
+        "group relative flex items-center gap-3 rounded-md border p-3 backdrop-blur transition-colors",
+        done
+          ? "border-emerald-400/20 bg-emerald-500/5"
+          : "border-primary/20 bg-card/60 hover:border-primary/35 hover:bg-primary/[0.04]",
+      )}
     >
       <motion.span
-        whileHover={{ scale: 1.15, rotate: 6 }}
-        transition={{ type: "spring", stiffness: 500, damping: 25 }}
-        className="grid size-10 shrink-0 place-items-center rounded-xl text-lg shadow-sm"
-        style={{
-          background: `oklch(from ${colorSoft(habit.color)} l c h / 0.12)`,
-        }}
+        whileHover={{ scale: 1.08 }}
+        className={cn(
+          "grid size-9 shrink-0 place-items-center rounded border text-base",
+          done
+            ? "border-emerald-400/25 bg-emerald-500/10"
+            : "border-primary/20 bg-primary/10",
+        )}
         aria-hidden
       >
         {habit.emoji}
@@ -580,37 +661,39 @@ function HabitDashboardRow({
       <div className="min-w-0 flex-1">
         <p
           className={cn(
-            "truncate text-sm font-medium",
-            done && "line-through text-muted-foreground",
+            "truncate text-sm font-medium tracking-wide",
+            done ? "line-through text-muted-foreground" : "text-foreground",
           )}
         >
           {habit.name}
+        </p>
+        <p className="font-mono text-[0.62rem] tracking-widest text-muted-foreground">
+          {done ? "◆ QUEST CLEAR ◆ +10 XP" : "▸ DAILY QUEST — TAP TO CLEAR"}
         </p>
       </div>
       <AnimatePresence mode="wait">
         {done ? (
           <motion.div
             key="done"
-            initial={{ scale: 0, rotate: -45 }}
-            animate={{ scale: 1, rotate: 0 }}
-            exit={{ scale: 0, rotate: 45, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 25 }}
-            className="flex items-center gap-1 rounded-full bg-chart-1/12 text-chart-1 px-2 py-0.5 text-xs font-semibold"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            className="flex items-center gap-1 rounded border border-emerald-400/30 bg-emerald-500/10 px-2 py-1 font-mono text-[0.62rem] font-bold tracking-widest text-emerald-400"
           >
-            <CheckCircle2 className="size-3.5" />
-            Done
+            <CheckCircle2 className="size-3" />
+            CLEAR
           </motion.div>
         ) : (
           <motion.button
             key="check"
             type="button"
             onClick={onToggle}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="shrink-0 size-10 rounded-full border-2 border-primary/30 bg-transparent flex items-center justify-center transition-colors hover:bg-primary/5 hover:border-primary"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.96 }}
+            className="shrink-0 grid size-9 place-items-center rounded border border-primary/30 bg-primary/10 text-primary transition-colors hover:bg-primary/15 hover:border-primary/50 hover:shadow-[0_0_10px_rgba(168,85,247,0.3)]"
             aria-label={`Mark ${habit.name} as done`}
           >
-            <CheckCircle2 className="size-4.5 text-primary" />
+            <CheckCircle2 className="size-4" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -664,40 +747,44 @@ function TaskDashboardRow({
         damping: 30,
         delay: index * 0.03,
       }}
-      className="group relative flex items-center gap-3 rounded-2xl bg-card/80 p-3 border border-border/50 hover:border-primary/20 transition-colors"
+      className="group relative flex items-center gap-3 rounded-md border border-violet-400/20 bg-violet-500/[0.04] p-3 backdrop-blur hover:border-violet-400/35 hover:bg-violet-500/10 transition-colors"
     >
       <motion.span
-        whileHover={{ scale: 1.15, rotate: 6 }}
-        transition={{ type: "spring", stiffness: 500, damping: 25 }}
-        className="grid size-10 shrink-0 place-items-center rounded-xl text-lg shadow-sm"
+        className="grid size-9 shrink-0 place-items-center rounded border border-violet-400/25 bg-violet-500/10 text-sm"
         aria-hidden
       >
-        🎯
+        ◆
       </motion.span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{task.title}</p>
+        <p className="truncate text-sm font-medium tracking-wide text-foreground">
+          {task.title}
+        </p>
         <div className="mt-1 flex items-center gap-2">
           <Badge
             variant="outline"
-            className={cn("text-xs gap-1", p.bg, p.text)}
+            className={cn(
+              "font-mono text-[0.62rem] tracking-widest border-violet-400/25",
+              p.bg,
+              p.text,
+            )}
           >
-            <Flame className="size-2.5" /> {p.label}
+            <Flame className="size-2.5" /> {p.label.toUpperCase()}
           </Badge>
           {task.due_date && (
             <span
               className={cn(
-                "text-xs",
+                "font-mono text-[0.62rem] tracking-wide tabular-nums",
                 task.due_date.slice(0, 10) < todayISO()
                   ? "text-destructive"
                   : task.due_date.slice(0, 10) === todayISO()
-                    ? "text-primary"
+                    ? "text-amber-400"
                     : "text-muted-foreground",
               )}
             >
               {task.due_date.slice(0, 10) === todayISO()
-                ? "Today"
+                ? "TODAY"
                 : task.due_date.slice(0, 10) < todayISO()
-                  ? "Overdue"
+                  ? "OVERDUE"
                   : task.due_date.slice(0, 10)}
             </span>
           )}
@@ -706,12 +793,12 @@ function TaskDashboardRow({
       <motion.button
         type="button"
         onClick={() => onToggle(true)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        className="shrink-0 size-10 rounded-full border-2 border-primary/30 bg-transparent flex items-center justify-center transition-colors hover:bg-primary/5 hover:border-primary"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.96 }}
+        className="shrink-0 grid size-9 place-items-center rounded border border-violet-400/30 bg-violet-500/10 text-violet-400 transition-colors hover:bg-violet-500/15 hover:border-violet-400/50 hover:shadow-[0_0_10px_rgba(124,58,237,0.3)]"
         aria-label={`Mark ${task.title} as done`}
       >
-        <CheckCircle2 className="size-4.5 text-primary" />
+        <CheckCircle2 className="size-4" />
       </motion.button>
     </motion.div>
   );

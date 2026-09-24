@@ -45,6 +45,8 @@ const FILTERS: { value: Filter; label: string }[] = [
   { value: "done", label: "Done" },
 ];
 
+const TASKS_VIEW_KEY = "tasks:view";
+
 export default function TasksPage() {
   return (
     <Suspense
@@ -66,10 +68,19 @@ function TasksPageContent() {
   const { data: tasks, isLoading } = useTasks();
   const setStatus = useSetTaskStatus();
 
-  const [view, setView] = useState<"list" | "board">("list");
+  const [view, setView] = useState<"list" | "board">(() => {
+    if (typeof window === "undefined") return "list";
+    const saved = localStorage.getItem(TASKS_VIEW_KEY) as "list" | "board" | null;
+    return saved === "board" ? "board" : "list";
+  });
   const [filter, setFilter] = useState<Filter>("all");
   const [priority, setPriority] = useState<string>("all");
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
+
+  useEffect(() => {
+    localStorage.setItem(TASKS_VIEW_KEY, view);
+  }, [view]);
+
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [dragOver, setDragOver] = useState<TaskStatus | null>(null);

@@ -78,6 +78,7 @@ export interface Profile {
   full_name: string
   avatar_url: string | null
   theme: string
+  app_theme?: "compound" | "solo" | null
   water_goal_ml: number
   water_unit: "ml" | "oz"
   water_quick_amounts: number[]
@@ -149,6 +150,20 @@ export interface ExpenseBudget {
   category_id: string
   amount: number
   period: "weekly" | "monthly" | "yearly"
+  created_at: string
+  updated_at: string
+}
+
+export interface Debt {
+  id: string
+  user_id: string
+  person_name: string
+  amount: number
+  type: "debt" | "owe"
+  status: "pending" | "paid" | "overdue"
+  due_date: string | null
+  note: string
+  settlement_transaction_id: string | null
   created_at: string
   updated_at: string
 }

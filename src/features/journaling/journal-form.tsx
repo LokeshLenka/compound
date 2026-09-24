@@ -51,7 +51,7 @@ export function JournalFormDialog({
   const deleteEntry = useDeleteJournalEntry();
   const isEdit = Boolean(entry);
 
-  const { register, reset, handleSubmit, setValue, watch, formState } =
+  const { register, reset, handleSubmit, setValue, watch, control, formState } =
     useForm<JournalFormValues>({
       resolver: zodResolver(journalSchema),
       defaultValues: {
@@ -63,7 +63,7 @@ export function JournalFormDialog({
       },
     });
 
-  const allValues = useWatch({ control: undefined });
+  const allValues = useWatch({ control });
   const [tagsInput, setTagsInput] = useState("");
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
@@ -135,9 +135,9 @@ export function JournalFormDialog({
       id: entry?.id,
       values: { ...values, tags: splitTags(tagsInput || "") },
     });
-    lastSavedRef.current = snapshot;
+    lastSavedRef.current = JSON.stringify({ ...values, tagsInput });
     setDirty(false);
-  }, [entry, tagsInput, snapshot, saveEntry, watch]);
+  }, [entry, tagsInput, saveEntry, watch]);
 
   function markDirty() {
     setDirty(true);

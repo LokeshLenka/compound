@@ -3,7 +3,6 @@
 import { Suspense } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useTheme } from "next-themes"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -80,39 +79,6 @@ function ProfileForm() {
         {update.isPending && <span className="text-sm text-muted-foreground">Saving…</span>}
       </div>
     </form>
-  )
-}
-
-function ThemeSection() {
-  const { resolvedTheme, setTheme } = useTheme()
-  const update = useUpdateProfile()
-  const options = [
-    { value: "light", label: "Light" },
-    { value: "dark", label: "Dark" },
-    { value: "system", label: "System" },
-  ]
-  return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((o) => {
-        const active =
-          (o.value === "system" && resolvedTheme === undefined) ||
-          (o.value !== "system" && resolvedTheme === o.value) ||
-          (o.value === "system" && !resolvedTheme)
-        return (
-          <Button
-            key={o.value}
-            type="button"
-            variant={active ? "default" : "outline"}
-            onClick={() => {
-              setTheme(o.value)
-              update.mutate({ theme: o.value })
-            }}
-          >
-            {o.label}
-          </Button>
-        )
-      })}
-    </div>
   )
 }
 
@@ -253,16 +219,6 @@ export default function SettingsPage() {
           <Suspense fallback={<Skeleton className="h-24 w-full" />}>
             <ProfileForm />
           </Suspense>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Appearance</CardTitle>
-          <CardDescription>Choose how the app looks on this device.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ThemeSection />
         </CardContent>
       </Card>
 

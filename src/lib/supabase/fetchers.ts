@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { subDays } from "date-fns"
 import type {
+  Debt,
   DiaryEntry,
   ExpenseBudget,
   ExpenseCategory,
@@ -35,6 +36,9 @@ export const expenseKeys = {
   transactions: ["expense_transactions"] as const,
   categories: ["expense_categories"] as const,
   budgets: ["expense_budgets"] as const,
+}
+export const debtsKeys = {
+  all: ["debts"] as const,
 }
 export const waterKeys = {
   logs: ["water_logs"] as const,
@@ -115,6 +119,7 @@ export async function fetchTransactions(supabase: SupabaseClient): Promise<Expen
     .from("expense_transactions")
     .select("*")
     .order("date", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(500)
   if (error) throw error
   return (data ?? []) as ExpenseTransaction[]
@@ -136,6 +141,17 @@ export async function fetchBudgets(supabase: SupabaseClient): Promise<ExpenseBud
     .order("created_at", { ascending: false })
   if (error) throw error
   return (data ?? []) as ExpenseBudget[]
+}
+
+export async function fetchDebts(supabase: SupabaseClient): Promise<Debt[]> {
+  const { data, error } = await supabase
+    .from("debts")
+    .select("*")
+    .order("status", { ascending: true })
+    .order("due_date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false })
+  if (error) throw error
+  return (data ?? []) as Debt[]
 }
 
 export async function fetchWaterLogs(supabase: SupabaseClient): Promise<WaterLog[]> {

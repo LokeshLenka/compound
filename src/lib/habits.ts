@@ -100,10 +100,11 @@ export function bestStreak(habit: Habit, logDates: string[], toDate = todayISO()
   return best
 }
 
-/** Fraction of due days in the last `days` window that were logged. */
+/** Fraction of due days in the last `days` window that were logged — excludes days before habit creation. */
 export function completionRate(habit: Habit, logDates: string[], days = 30): number {
   const set = new Set(logDates)
-  const due = lastNDates(days).filter((d) => isDueOnDate(habit, d))
+  const created = habit.created_at.slice(0, 10)
+  const due = lastNDates(days).filter((d) => d >= created && isDueOnDate(habit, d))
   if (due.length === 0) return 0
   const done = due.filter((d) => set.has(d)).length
   return done / due.length

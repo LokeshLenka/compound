@@ -91,21 +91,19 @@ export default function WaterStatsPage() {
     [hourlyDist],
   )
 
-  // Day-of-week pattern (0=Sun .. 6=Sat)
+  // Day-of-week pattern — avg per weekday occurrence (last 30 days), not per log entry
   const dayOfWeek = useMemo(() => {
-    const totals = new Array(7).fill(0)
-    const counts = new Array(7).fill(0)
-    for (const l of logs) {
-      const d = getDay(new Date(l.drank_at))
-      totals[d] += l.amount_ml
-      counts[d] += 1
-    }
     const labels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    const buckets: number[][] = Array.from({ length: 7 }, () => [])
+    for (const d of days30) {
+      const wd = getDay(new Date(d.date))
+      buckets[wd].push(d.totalMl)
+    }
     return labels.map((label, i) => ({
       label,
-      avgMl: counts[i] > 0 ? Math.round(totals[i] / counts[i]) : 0,
+      avgMl: buckets[i].length > 0 ? Math.round(buckets[i].reduce((a, b) => a + b, 0) / buckets[i].length) : 0,
     }))
-  }, [logs])
+  }, [days30])
   const maxDowAvg = useMemo(
     () => Math.max(...dayOfWeek.map((d) => d.avgMl), 1),
     [dayOfWeek],

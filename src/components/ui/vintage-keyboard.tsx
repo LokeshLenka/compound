@@ -1116,7 +1116,9 @@ export const Component = ({ muted = false }: { muted?: boolean } = {}) => {
   const caseTier = CASE_TIERS[tier];
   const gap = KEY_GAP_TIERS[tier];
   const mutedRef = useRef(muted);
-  mutedRef.current = muted;
+  useEffect(() => {
+    mutedRef.current = muted;
+  }, [muted]);
 
   const registerTrigger = useCallback((id: string, trigger: KeyTrigger) => {
     keyTriggersRef.current[id] = trigger;
