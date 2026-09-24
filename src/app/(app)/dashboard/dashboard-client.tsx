@@ -170,7 +170,11 @@ export default function DashboardPage() {
         title="PLAYER STATUS"
         subtitle={`${humanDate(today, "yyyy.MM.dd")} — ${greeting(now).toUpperCase()} // ${openCount === 0 ? "ALL QUESTS CLEARED" : `${openCount} ACTIVE QUESTS`}`}
         icon={<span className="font-mono text-[0.7rem]">◈</span>}
-        headerActions={<span className="font-mono text-[0.62rem] tracking-widest text-primary">{openCount} ACTIVE</span>}
+        headerActions={
+          <span className="font-mono text-[0.62rem] tracking-widest text-primary">
+            {openCount} ACTIVE
+          </span>
+        }
       >
         <div className="grid gap-3 md:grid-cols-3">
           <StatBar
@@ -668,7 +672,7 @@ function HabitDashboardRow({
           {habit.name}
         </p>
         <p className="font-mono text-[0.62rem] tracking-widest text-muted-foreground">
-          {done ? "◆ QUEST CLEAR ◆ +10 XP" : "▸ DAILY QUEST — TAP TO CLEAR"}
+          {done ? "◆ QUEST CLEAR ◆ +10 XP" : ""}
         </p>
       </div>
       <AnimatePresence mode="wait">
