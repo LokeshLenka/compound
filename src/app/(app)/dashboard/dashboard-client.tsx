@@ -106,6 +106,16 @@ export default function DashboardPage() {
       return da < db ? -1 : da > db ? 1 : 0;
     });
 
+  // Tasks that are actually active today (due today/overdue or no date)
+  const tasksDueToday = tasks.filter(
+    (t) =>
+      t.status !== "archived" &&
+      (!t.due_date || t.due_date.slice(0, 10) <= today),
+  );
+  const pendingTasksDueToday = tasksDueToday.filter((t) => t.status !== "done");
+  const completedTasksDueToday =
+    tasksDueToday.length - pendingTasksDueToday.length;
+
   const todayDiary = diary?.find((e) => e.entry_date === today);
 
   const waterUnit = waterSettings?.water_unit ?? "ml";
@@ -126,9 +136,10 @@ export default function DashboardPage() {
   const waterDone = waterToday >= waterGoal;
   const waterPct = progressPct(waterToday, waterGoal);
 
+  // Active = pending habits (due today) + pending tasks due today + water pending + diary pending
   const openCount =
     pendingHabits.length +
-    openTasks.length +
+    pendingTasksDueToday.length +
     (todayDiary ? 0 : 1) +
     (waterDone ? 0 : 1);
 
@@ -153,7 +164,7 @@ export default function DashboardPage() {
     <div className="space-y-5">
       <PageHeader
         title={displayName}
-        subtitle="SYSTEM // DAILY QUESTS"
+        subtitle=""
         actions={
           <div className="hidden md:block">
             <DashboardQuickAddDesktop
@@ -168,7 +179,7 @@ export default function DashboardPage() {
       {/* Player Status Panel */}
       <SystemWindow
         title="PLAYER STATUS"
-        subtitle={`${humanDate(today, "yyyy.MM.dd")} — ${greeting(now).toUpperCase()} // ${openCount === 0 ? "ALL QUESTS CLEARED" : `${openCount} ACTIVE QUESTS`}`}
+        subtitle={`${humanDate(today, "dd.MMMM.yyyy")} `}
         icon={<span className="font-mono text-[0.7rem]">◈</span>}
         headerActions={
           <span className="font-mono text-[0.62rem] tracking-widest text-primary">
@@ -185,8 +196,8 @@ export default function DashboardPage() {
           />
           <StatBar
             label="GATES"
-            value={Math.max(0, 6 - openTasks.length)}
-            max={6}
+            value={completedTasksDueToday}
+            max={Math.max(1, tasksDueToday.length)}
             color="violet"
           />
           <StatBar
@@ -198,7 +209,7 @@ export default function DashboardPage() {
         </div>
         <div className="mt-3 flex items-center gap-2 text-xs font-mono tracking-widest text-muted-foreground">
           <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          SYSTEM ONLINE — {openCount === 0 ? "STANDBY MODE" : "COMBAT READY"}
+          {openCount === 0 ? "STANDBY MODE" : "COMBAT READY"}
           <span className="ml-auto tabular-nums">
             {pctDisplay(waterPct)}% SYNC
           </span>
@@ -218,9 +229,7 @@ export default function DashboardPage() {
               <ListChecks className="size-4" aria-hidden />
             </span>
             <span className="tracking-[0.14em]">GATES</span>
-            <span className="text-xs font-normal tracking-wide text-muted-foreground">
-              — MISSIONS
-            </span>
+            <span className="text-xs font-normal tracking-wide text-muted-foreground"></span>
             {openTasks.length > 0 && (
               <span className="ml-1 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-[0.62rem] tracking-widest text-primary">
                 {openTasks.length} OPEN
@@ -332,7 +341,7 @@ export default function DashboardPage() {
             </span>
             <span className="tracking-[0.14em]">VITALS</span>
             <span className="text-xs font-normal tracking-wide text-muted-foreground">
-              — HP / MANA
+              — HP
             </span>
             <span
               className={cn(
