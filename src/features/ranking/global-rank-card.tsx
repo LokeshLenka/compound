@@ -59,7 +59,9 @@ function RankDetailsDialog({
                 <>
                   {Math.max(0, nextRank.minScore - score).toFixed(1)}
                   <span className="text-[0.58rem] text-muted-foreground">
-                    {score >= nextRank.minScore ? "READY" : `TO ${nextRank.rank}`}
+                    {score >= nextRank.minScore
+                      ? "READY"
+                      : `TO ${nextRank.rank}`}
                   </span>
                 </>
               ) : (
@@ -226,7 +228,7 @@ export function GlobalRankCard({
   return (
     <>
       <SystemWindow
-        title={`HUNTER RANK — ${rankDef.title.toUpperCase()}`}
+        title={`${rankDef.title.toUpperCase()}`}
         subtitle={subtitle}
         icon={<Trophy className="size-3" />}
         headerActions={<RankBadge rank={rank} size="lg" />}
@@ -254,7 +256,7 @@ export function GlobalRankCard({
               className="h-7 font-mono text-xs tracking-widest"
               onClick={showSheet}
             >
-              View breakdown <ChevronDown className="size-3" />
+              breakdown <ChevronDown className="size-3" />
             </Button>
           </div>
         </div>
