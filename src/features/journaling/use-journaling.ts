@@ -37,9 +37,15 @@ export function useSaveJournalEntry() {
       if (id) {
         const { error } = await sb.from("journal_entries").update(payload).eq("id", id)
         if (error) throw error
+        return id
       } else {
-        const { error } = await sb.from("journal_entries").insert(payload)
+        const { data, error } = await sb
+          .from("journal_entries")
+          .insert(payload)
+          .select("id")
+          .single()
         if (error) throw error
+        return data.id as string
       }
     },
     onSuccess: () => {

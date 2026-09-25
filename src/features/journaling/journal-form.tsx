@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownEditor } from "@/features/notes/markdown-editor";
 import { cn } from "@/lib/utils";
 import {
   Trash2,
@@ -71,8 +71,10 @@ export function JournalFormDialog({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const [dirty, setDirty] = useState(false);
+  const [editorKey, setEditorKey] = useState(0);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef<string>("");
+  const entryIdRef = useRef<string | undefined>(entry?.id);
 
   const snapshot = useMemo(
     () => JSON.stringify({ ...allValues, tagsInput }),
@@ -91,6 +93,8 @@ export function JournalFormDialog({
       });
       setTagsInput(entry?.tags?.join(", ") ?? "");
       setDirty(false);
+      entryIdRef.current = entry?.id;
+      setEditorKey((k) => k + 1);
       lastSavedRef.current = JSON.stringify({
         title: entry?.title ?? "",
         content: entry?.content ?? "",
@@ -131,23 +135,25 @@ export function JournalFormDialog({
 
   const doSave = useCallback(async () => {
     const values = watch();
-    await saveEntry.mutateAsync({
-      id: entry?.id,
+    const savedId = await saveEntry.mutateAsync({
+      id: entryIdRef.current,
       values: { ...values, tags: splitTags(tagsInput || "") },
     });
+    entryIdRef.current = savedId;
     lastSavedRef.current = JSON.stringify({ ...values, tagsInput });
     setDirty(false);
-  }, [entry, tagsInput, saveEntry, watch]);
+  }, [tagsInput, saveEntry, watch]);
 
   function markDirty() {
     setDirty(true);
   }
 
   async function onSubmit(values: JournalFormValues) {
-    await saveEntry.mutateAsync({
-      id: entry?.id,
+    const savedId = await saveEntry.mutateAsync({
+      id: entryIdRef.current,
       values: { ...values, tags: splitTags(tagsInput || "") },
     });
+    entryIdRef.current = savedId;
     lastSavedRef.current = snapshot;
     setDirty(false);
     onOpenChange(false);
@@ -317,12 +323,17 @@ export function JournalFormDialog({
               autoFocus
               {...register("title", { onChange: markDirty })}
             />
-            <Textarea
-              id="journal-content"
-              placeholder="What's on your mind? Write freely — no structure needed…"
-              className="mt-2 flex-1 max-h-[40vh] resize-none border-0 px-5 shadow-none focus-visible:ring-0 lg:min-h-0 radius-none"
-              {...register("content", { onChange: markDirty })}
-            />
+            <div className="mt-2 flex-1 min-h-[40vh] lg:min-h-0">
+              <MarkdownEditor
+                key={editorKey}
+                content={watch("content") ?? ""}
+                onChange={(md) => {
+                  setValue("content", md, { shouldDirty: true });
+                  markDirty();
+                }}
+                placeholder="What's on your mind? Write freely — no structure needed…"
+              />
+            </div>
           </div>
 
           {/* Sidebar: mood, category, tags — desktop only */}
