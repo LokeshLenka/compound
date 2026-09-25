@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -16,6 +17,7 @@ import {
   MoreHorizontal,
   Search,
   Radar,
+  Crown,
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -23,12 +25,7 @@ import { GlobalSearch } from "@/features/search/global-search";
 import { InstallPrompt } from "@/components/install-prompt";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { MobileStaggeredMenu } from "@/components/mobile-staggered-menu";
 import type { Profile } from "@/lib/types";
 
 /* HUNTER HQ NAV — Solo Leveling mapping */
@@ -40,6 +37,7 @@ const NAV = [
     icon: LayoutDashboard,
   },
   { href: "/analytics", label: "CODEX", sub: "System Stats", icon: Radar },
+  { href: "/ranks", label: "RANKS", sub: "9 Levels", icon: Crown },
   { href: "/habits", label: "DAILY QUESTS", sub: "Check-ins", icon: Repeat },
   { href: "/tasks", label: "GATES", sub: "Missions", icon: ListChecks },
   { href: "/notes", label: "ARCHIVES", sub: "Intel", icon: FileText },
@@ -59,6 +57,7 @@ const MOBILE_PRIMARY = [
 
 const MOBILE_MORE = [
   { href: "/habits", label: "Quests", icon: Repeat },
+  { href: "/ranks", label: "Ranks", icon: Crown },
   { href: "/diary", label: "Shadow Log", icon: BookOpen },
   { href: "/journal", label: "Chronicle", icon: NotebookPen },
   { href: "/notes", label: "Archives", icon: FileText },
@@ -117,88 +116,66 @@ function NavLinks({ pathname }: { pathname: string; onNavigate?: () => void }) {
 }
 
 function MobileBottomNav({ pathname }: { pathname: string }) {
+  const [staggeredOpen, setStaggeredOpen] = React.useState(false);
   const isMoreActive = MOBILE_MORE.some(
     ({ href }) => pathname === href || pathname.startsWith(`${href}/`),
   );
 
   return (
-    <nav
-      aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-primary/20 bg-background/95 backdrop-blur-xl md:hidden"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-    >
-      <div
-        className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
-        aria-hidden
-      />
-      <div className="flex items-center justify-around px-1 py-2">
-        {MOBILE_PRIMARY.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-label={label}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex flex-col items-center gap-0.5 rounded-md px-2.5 py-1.5 transition-colors border",
-                active
-                  ? "text-primary bg-primary/10 border-primary/25 shadow-[0_0_10px_rgba(168,85,247,0.2)]"
-                  : "text-muted-foreground border-transparent",
-              )}
-            >
-              <Icon className="size-4.5" aria-hidden />
-              <span className="text-[0.58rem] font-mono font-bold tracking-widest leading-none">
-                {label.toUpperCase()}
-              </span>
-            </Link>
-          );
-        })}
-        <DropdownMenu>
-          <DropdownMenuTrigger
+    <>
+      <nav
+        aria-label="Primary"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-primary/20 bg-background/95 backdrop-blur-xl md:hidden"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div
+          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
+          aria-hidden
+        />
+        <div className="flex items-center justify-around px-1 py-2">
+          {MOBILE_PRIMARY.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(`${href}/`);
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-label={label}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 rounded-md px-2.5 py-1.5 transition-colors border",
+                  active
+                    ? "text-primary bg-primary/10 border-primary/25 shadow-[0_0_10px_rgba(168,85,247,0.2)]"
+                    : "text-muted-foreground border-transparent",
+                )}
+              >
+                <Icon className="size-4.5" aria-hidden />
+                <span className="text-[0.58rem] font-mono font-bold tracking-widest leading-none">
+                  {label.toUpperCase()}
+                </span>
+              </Link>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setStaggeredOpen((v) => !v)}
             className={cn(
               "flex flex-col items-center gap-0.5 rounded-md px-2.5 py-1.5 transition-colors border",
-              isMoreActive
+              isMoreActive || staggeredOpen
                 ? "text-primary bg-primary/10 border-primary/25"
                 : "text-muted-foreground border-transparent",
             )}
+            aria-expanded={staggeredOpen}
+            aria-controls="mobile-staggered-panel"
           >
             <MoreHorizontal className="size-4.5" aria-hidden />
             <span className="text-[0.58rem] font-mono font-bold tracking-widest leading-none">
               MORE
             </span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            side="top"
-            sideOffset={12}
-            align="center"
-            className="hud-frame rounded-lg"
-          >
-            {MOBILE_MORE.map(({ href, label, icon: Icon }) => {
-              const active =
-                pathname === href || pathname.startsWith(`${href}/`);
-              return (
-                <DropdownMenuItem
-                  key={href}
-                  render={
-                    <Link
-                      href={href}
-                      className={cn(
-                        "flex items-center gap-2.5 font-mono text-xs tracking-widest",
-                        active && "text-primary",
-                      )}
-                    />
-                  }
-                >
-                  <Icon className="size-4" aria-hidden />
-                  {label.toUpperCase()}
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </nav>
+          </button>
+        </div>
+      </nav>
+      <MobileStaggeredMenu open={staggeredOpen} onClose={() => setStaggeredOpen(false)} />
+    </>
   );
 }
 

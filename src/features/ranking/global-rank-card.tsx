@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Trophy, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { Trophy, ChevronDown, Crown } from "lucide-react";
 import { SystemWindow } from "@/components/system/system-window";
 import { RankBadge } from "@/components/system/rank-badge";
 import { HudCard, HudCardHeader } from "@/components/system/hud-card";
 import { StatBar } from "@/components/system/stat-bar";
 import { useGlobalRank } from "./use-global-rank";
-import { Button } from "@/components/ui/button";
+import { RanksOverview } from "./ranks-overview";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -146,13 +149,17 @@ function RankDetailsDialog({
                 WEIGHTED {weighted.toFixed(1)}
               </span>
               <span className="border border-violet-400/20 bg-violet-500/10 px-2 py-1 text-violet-300">
-                CURVED {score.toFixed(1)}
+                SCORE {score.toFixed(1)}
               </span>
               <span className="border border-zinc-400/20 bg-zinc-500/10 px-2 py-1 text-zinc-300">
                 STREAK {metrics.bestStreak}
               </span>
             </div>
           </HudCard>
+
+          <div className="border-t border-primary/10 pt-4">
+            <RanksOverview />
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -209,14 +216,19 @@ export function GlobalRankCard({
                   ? `◆ ${blocked}`
                   : `◆ ${progressToNext.toFixed(0)}% to ${nextRank?.rank ?? "MONARCH"}`}
               </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 font-mono text-[0.62rem] tracking-widest"
-                onClick={showSheet}
-              >
-                Details <ChevronDown className="size-3" />
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <Link href="/ranks" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-6 px-2 font-mono text-[0.62rem] tracking-widest")}>
+                  <Crown className="size-3" /> 9 RANKS
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 font-mono text-[0.62rem] tracking-widest"
+                  onClick={showSheet}
+                >
+                  Details <ChevronDown className="size-3" />
+                </Button>
+              </div>
             </div>
           </div>
         </SystemWindow>
@@ -244,20 +256,25 @@ export function GlobalRankCard({
               style={{ width: `${progressToNext}%` }}
             />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-[0.62rem] tracking-widest text-muted-foreground">
               {blocked
                 ? `◆ ${blocked}`
                 : `◆ ${progressToNext.toFixed(0)}% to ${nextRank?.rank ?? "MONARCH"}`}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 font-mono text-xs tracking-widest"
-              onClick={showSheet}
-            >
-              breakdown <ChevronDown className="size-3" />
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Link href="/ranks" className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-7 font-mono text-xs tracking-widest")}>
+                <Crown className="size-3" /> 9 RANKS
+              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 font-mono text-xs tracking-widest"
+                onClick={showSheet}
+              >
+                breakdown <ChevronDown className="size-3" />
+              </Button>
+            </div>
           </div>
         </div>
       </SystemWindow>

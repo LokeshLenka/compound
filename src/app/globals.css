@@ -179,6 +179,7 @@
     scroll-behavior: smooth;
     background: var(--background);
     min-height: 100%;
+    scroll-padding-top: 1rem;
   }
   body {
     @apply bg-background text-foreground;

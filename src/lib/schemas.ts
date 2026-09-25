@@ -114,3 +114,11 @@ export const debtSchema = z.object({
 })
 
 export type DebtFormValues = z.input<typeof debtSchema>
+
+export const debtPaymentSchema = z.object({
+  amount: z.coerce.number().positive("Amount must be positive"),
+  date: z.string().default(() => new Date().toISOString().slice(0, 10)),
+  note: z.string().default(""),
+})
+
+export type DebtPaymentFormValues = z.input<typeof debtPaymentSchema>

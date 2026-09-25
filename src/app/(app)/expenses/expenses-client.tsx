@@ -13,22 +13,31 @@ import {
   TrendingDown,
   Scale,
   BarChart3,
+  Pencil,
+  X,
+  Check,
+  Trash,
+  ArrowDown,
+  ChevronDown,
 } from "lucide-react";
 import {
   useTransactions,
   useCategories,
   useBudgets,
   useDebts,
-  useToggleDebtPaid,
+  useAllDebtPayments,
+  useDeleteDebtPayment,
 } from "@/features/expenses/use-expenses";
 import {
   TransactionDialog,
   CategoryDialog,
   BudgetDialog,
   DebtDialog,
+  DebtPaymentDialog,
   CategoryEmoji,
 } from "@/features/expenses/expense-forms";
 import { CreateFab } from "@/components/create-fab";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import type { ExpenseTransaction, ExpenseCategory } from "@/lib/types";
 import { format } from "date-fns";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -226,7 +235,6 @@ function ExpensesPageContent() {
   const { data: categories = [], isLoading: catsLoading } = useCategories();
   const { data: budgets = [] } = useBudgets();
   const { data: debts = [], isLoading: debtsLoading } = useDebts();
-  const toggleDebtPaid = useToggleDebtPaid();
 
   const [tab, setTab] = useState<Tab>("transactions");
   const [monthOffset, setMonthOffset] = useState(0);
@@ -248,8 +256,24 @@ function ExpensesPageContent() {
   );
   const [debtFilter, setDebtFilter] = useState<"all" | "debt" | "owe">("all");
   const [carouselSlide, setCarouselSlide] = useState(0);
+  const [paymentDebt, setPaymentDebt] = useState<(typeof debts)[number] | null>(
+    null,
+  );
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<
+    import("@/lib/types").DebtPayment | null
+  >(null);
+  const [confirmPayment, setConfirmPayment] = useState<{
+    paymentId: string;
+    debtId: string;
+    amount: string;
+  } | null>(null);
+  const { data: debtPayments = [] } = useAllDebtPayments();
+  const [expandedDebtId, setExpandedDebtId] = useState<string | null>(null);
+  const deletePayment = useDeleteDebtPayment();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync carousel to tab
     if (tab === "debts") setCarouselSlide(1);
     else setCarouselSlide(0);
   }, [tab]);
@@ -346,14 +370,24 @@ function ExpensesPageContent() {
   }, [debts, debtFilter, query]);
 
   const debtStats = useMemo(() => {
-    const pendingDebts = debts.filter(
-      (d) => d.type === "debt" && d.status !== "paid",
-    );
-    const pendingOwes = debts.filter(
-      (d) => d.type === "owe" && d.status !== "paid",
-    );
-    const totalDebt = pendingDebts.reduce((s, d) => s + Number(d.amount), 0);
-    const totalOwe = pendingOwes.reduce((s, d) => s + Number(d.amount), 0);
+    const totalDebt = debts
+      .filter((d) => d.type === "debt" && d.status !== "paid")
+      .reduce(
+        (s, d) =>
+          s +
+          (Number(d.amount) -
+            Number((d as { paid_amount?: number }).paid_amount || 0)),
+        0,
+      );
+    const totalOwe = debts
+      .filter((d) => d.type === "owe" && d.status !== "paid")
+      .reduce(
+        (s, d) =>
+          s +
+          (Number(d.amount) -
+            Number((d as { paid_amount?: number }).paid_amount || 0)),
+        0,
+      );
     return { totalDebt, totalOwe, net: totalOwe - totalDebt };
   }, [debts]);
 
@@ -467,18 +501,13 @@ function ExpensesPageContent() {
           className="grid w-full grid-cols-4 rounded-full bg-muted/70 p-1"
           aria-label="Expenses views"
         >
-          <TabsTrigger value="transactions" className="rounded-full">
-            Transactions
+          <TabsTrigger value="transactions">
+            <span className="lg:hidden ">History</span>
+            <span className="hidden lg:inline">Transactions</span>
           </TabsTrigger>
-          <TabsTrigger value="debts" className="rounded-full">
-            Debts
-          </TabsTrigger>
-          <TabsTrigger value="categories" className="rounded-full">
-            Categories
-          </TabsTrigger>
-          <TabsTrigger value="budgets" className="rounded-full">
-            Budgets
-          </TabsTrigger>
+          <TabsTrigger value="debts">Debts</TabsTrigger>
+          <TabsTrigger value="categories">Categories</TabsTrigger>
+          <TabsTrigger value="budgets">Budgets</TabsTrigger>
         </TabsList>
 
         <TabsContent value="transactions">
@@ -550,6 +579,55 @@ function ExpensesPageContent() {
                     const cat = t.category_id
                       ? catById.get(t.category_id)
                       : undefined;
+                    const dp = debtPayments.find(
+                      (p) => p.transaction_id === t.id,
+                    );
+                    const dSettle = debts.find(
+                      (d) =>
+                        (d as unknown as { settlement_transaction_id?: string })
+                          .settlement_transaction_id === t.id,
+                    );
+                    const debtForTxn = dp
+                      ? debts.find((d) => d.id === dp.debt_id)
+                      : (dSettle ?? null);
+                    const isDebtTxn = !!(dp || dSettle);
+                    let debtInfo: string | null = null;
+                    if (isDebtTxn && debtForTxn) {
+                      const person = debtForTxn.person_name || "Unknown";
+                      const debtNote = debtForTxn.note?.trim();
+                      const payNote = dp?.note?.trim() || "";
+                      const txnNote = t.note?.trim() || "";
+                      // Prefer txn note if it already is a full debt note, otherwise compose
+                      if (txnNote && txnNote.startsWith("Debt")) {
+                        debtInfo = txnNote;
+                      } else {
+                        const parts = [
+                          `Debt ${dSettle ? "settlement" : "payment"}: ${person}`,
+                        ];
+                        if (debtNote) parts.push(debtNote);
+                        if (payNote && payNote !== debtNote)
+                          parts.push(payNote);
+                        if (
+                          txnNote &&
+                          !parts.join(" ").includes(txnNote) &&
+                          txnNote !== payNote &&
+                          txnNote !== debtNote
+                        )
+                          parts.push(txnNote);
+                        debtInfo = parts.join(" — ");
+                        if (!payNote && !debtNote && !txnNote)
+                          debtInfo = `Debt ${dSettle ? "settlement" : "payment"}: ${person}`;
+                      }
+                    } else if (isDebtTxn) {
+                      debtInfo = t.note?.trim()
+                        ? t.note
+                        : `Debt:payment - ${t.note || "payment"}`;
+                    }
+                    // Fallback when debt not found but still debt txn (should not happen)
+                    const displayTitle = isDebtTxn
+                      ? debtInfo || `Debt:payment - ${t.note || "payment"}`
+                      : t.note || cat?.name || "Uncategorized";
+                    const debtNote = debtForTxn?.note?.trim() || "";
                     return (
                       <button
                         key={t.id}
@@ -558,15 +636,27 @@ function ExpensesPageContent() {
                           setEditingTxn(t);
                           setTxnOpen(true);
                         }}
-                        className="flex w-full items-center gap-3 px-6 py-3 text-left transition hover:bg-muted/50"
+                        className="flex w-full items-center gap-3 px-6 py-4 text-left transition hover:bg-muted/50 min-h-[56px]"
                       >
-                        <CategoryEmoji emoji={cat?.icon} color={cat?.color} />
+                        {isDebtTxn ? (
+                          <span className="grid size-10 place-items-center rounded-full bg-violet-500/15 text-violet-400 shrink-0">
+                            <span className="text-xs font-bold">₿</span>
+                          </span>
+                        ) : (
+                          <CategoryEmoji emoji={cat?.icon} color={cat?.color} />
+                        )}
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-medium">
-                            {t.note || cat?.name || "Uncategorized"}
+                            {displayTitle}
                           </span>
                           <span className="block text-xs text-muted-foreground">
-                            {cat?.name && t.note ? `${cat.name} · ` : ""}
+                            {isDebtTxn
+                              ? "Vault · "
+                              : cat?.name && t.note
+                                ? `${cat.name} · `
+                                : cat?.name
+                                  ? `${cat.name} · `
+                                  : ""}
                             {format(new Date(t.date), "MMM d")}
                           </span>
                         </span>
@@ -773,77 +863,189 @@ function ExpensesPageContent() {
                 </CardContent>
               </Card>
             ) : (
-              <Card>
-                <CardContent className="divide-y divide-border/60 p-0">
-                  {visibleDebts.map((d) => (
-                    <div
-                      key={d.id}
-                      className="flex items-center gap-3 px-4 py-3"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingDebt(d);
-                          setDebtOpen(true);
-                        }}
-                        className="flex flex-1 items-center gap-3 text-left"
-                      >
-                        <span
-                          className={cn(
-                            "grid size-8 place-items-center rounded-full text-xs font-bold text-white",
-                            d.type === "debt" ? "bg-red-500" : "bg-green-600",
-                          )}
+              <div className="space-y-3">
+                {visibleDebts.map((d) => {
+                  const paid = Number(
+                    (d as unknown as { paid_amount?: number }).paid_amount || 0,
+                  );
+                  const total = Number(d.amount);
+                  const remaining = Math.max(0, total - paid);
+                  const pct =
+                    total > 0 ? Math.min(100, (paid / total) * 100) : 0;
+                  const isPaid = remaining <= 0.01;
+                  const expanded = expandedDebtId === d.id;
+                  const payments = debtPayments.filter(
+                    (p) => p.debt_id === d.id,
+                  );
+                  return (
+                    <Card key={d.id} className="overflow-hidden">
+                      <CardContent className="space-y-4">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedDebtId(expanded ? null : d.id)
+                          }
+                          className="flex w-full items-center gap-3 p-4 text-left min-h-[56px] hover:bg-muted/20 transition-colors"
                         >
-                          {d.type === "debt" ? "D" : "O"}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium">
-                            {d.person_name}
+                          <span
+                            className={cn(
+                              "grid size-10 place-items-center rounded-full text-xs font-bold text-white shrink-0",
+                              d.type === "debt" ? "bg-red-500" : "bg-green-600",
+                            )}
+                          >
+                            {d.type === "debt" ? "D" : "O"}
                           </span>
-                          <span className="block text-xs text-muted-foreground">
-                            {d.note ||
-                              (d.due_date
-                                ? `Due ${format(new Date(d.due_date), "MMM d, yyyy")}`
-                                : "No due date")}{" "}
-                            ·{" "}
-                            <span
-                              className={cn(
-                                d.status === "paid"
-                                  ? "text-green-600"
-                                  : d.status === "overdue"
-                                    ? "text-destructive"
-                                    : "text-muted-foreground",
+                          <span className="min-w-0 flex-1">
+                            <span className="flex items-center gap-1.5 truncate text-sm font-medium">
+                              {d.person_name}
+                              {isPaid && (
+                                <span className="text-green-600 text-xs">
+                                  Paid
+                                </span>
                               )}
-                            >
-                              {d.status}
+                            </span>
+                            <span className="block text-xs text-muted-foreground truncate">
+                              {fmt(paid)} / {fmt(total)} · {pct.toFixed(0)}% ·{" "}
+                              {isPaid ? "paid" : d.status}
                             </span>
                           </span>
-                        </span>
-                        <span
-                          className={cn(
-                            "shrink-0 text-sm font-semibold tabular-nums",
-                            d.type === "debt"
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-green-600 dark:text-green-400",
-                          )}
-                        >
-                          {d.type === "debt" ? "−" : "+"}
-                          {fmt(Number(d.amount))}
-                        </span>
-                      </button>
-                      <Button
-                        size="sm"
-                        variant={d.status === "paid" ? "outline" : "default"}
-                        className="h-8 shrink-0"
-                        onClick={() => toggleDebtPaid.mutate(d.id)}
-                        disabled={toggleDebtPaid.isPending}
-                      >
-                        {d.status === "paid" ? "Undo" : "Paid"}
-                      </Button>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
+                          <span
+                            className={cn(
+                              "shrink-0 text-sm font-bold tabular-nums",
+                              d.type === "debt"
+                                ? "text-red-600 dark:text-red-400"
+                                : "text-green-600 dark:text-green-400",
+                            )}
+                          >
+                            {d.type === "debt" ? "-" : "+"}
+                            {fmt(total)}
+                          </span>
+                          <span
+                            className={cn(
+                              "grid size-8 place-items-center shrink-0 rounded border transition-transform",
+                              expanded
+                                ? "bg-primary text-primary-foreground rotate-180"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                          >
+                            <ChevronDown className="size-4" />
+                          </span>
+                        </button>
+                        <div className="px-4 pb-3">
+                          <div className="h-2 bg-muted">
+                            <div
+                              className="h-full bg-primary transition-all"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                        {expanded && (
+                          <div className="space-y-3 px-4 pb-4 animate-enter">
+                            <div className="flex justify-between text-xs font-mono">
+                              <span className="text-muted-foreground">
+                                {d.note ? (
+                                  <span>Note: {d.note}</span>
+                                ) : d.due_date ? (
+                                  <span>
+                                    Due{" "}
+                                    {format(
+                                      new Date(d.due_date),
+                                      "MMM d, yyyy",
+                                    )}
+                                  </span>
+                                ) : (
+                                  <span>No due date</span>
+                                )}{" "}
+                                ·{" "}
+                                <span
+                                  className={cn(
+                                    d.status === "paid"
+                                      ? "text-green-600"
+                                      : d.status === "overdue"
+                                        ? "text-destructive"
+                                        : "text-muted-foreground",
+                                  )}
+                                >
+                                  {d.status}
+                                </span>
+                              </span>
+                              <span
+                                className={cn(
+                                  "font-medium",
+                                  remaining === 0
+                                    ? "text-green-600"
+                                    : "text-amber-600",
+                                )}
+                              >
+                                Remaining {fmt(remaining)}
+                              </span>
+                            </div>
+
+                            {payments.length > 0 && (
+                              <div className="rounded-none border border-primary/10 bg-muted/20">
+                                <div className="px-2 py-1 text-[10px] font-mono font-bold tracking-widest text-muted-foreground">
+                                  PAYMENTS ({payments.length}) — tap to edit
+                                </div>
+                                <div className="divide-y divide-border/30">
+                                  {payments.map((p) => (
+                                    <button
+                                      key={p.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setPaymentDebt(d);
+                                        setEditingPayment(
+                                          p as unknown as import("@/lib/types").DebtPayment,
+                                        );
+                                        setPaymentOpen(true);
+                                      }}
+                                      className="flex w-full items-center gap-3 px-3 py-4 text-left hover:bg-muted/40 transition-colors min-h-[56px]"
+                                    >
+                                      <span className="font-mono tabular-nums shrink-0 text-sm">
+                                        {fmt(Number(p.amount))} ·{" "}
+                                        {format(new Date(p.date), "MMM d")}
+                                      </span>
+                                      <span className="truncate text-muted-foreground flex-1 text-sm">
+                                        {p.note || "No note"}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                className="flex-1 min-h-[44px] text-sm"
+                                disabled={isPaid}
+                                onClick={() => {
+                                  setPaymentDebt(d);
+                                  setEditingPayment(null);
+                                  setPaymentOpen(true);
+                                }}
+                              >
+                                {isPaid
+                                  ? "Fully paid"
+                                  : `Pay ${fmt(remaining)}`}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="min-h-[44px] px-4"
+                                onClick={() => {
+                                  setEditingDebt(d);
+                                  setDebtOpen(true);
+                                }}
+                              >
+                                <Pencil className="size-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             )}
           </div>
         </TabsContent>
@@ -870,6 +1072,30 @@ function ExpensesPageContent() {
         open={debtOpen}
         onOpenChange={setDebtOpen}
         debt={editingDebt}
+      />
+      <DebtPaymentDialog
+        open={paymentOpen}
+        onOpenChange={(o) => {
+          setPaymentOpen(o);
+          if (!o) setEditingPayment(null);
+        }}
+        debt={paymentDebt}
+        payment={editingPayment}
+      />
+      <ConfirmDeleteDialog
+        open={!!confirmPayment}
+        onOpenChange={(o: boolean) => !o && setConfirmPayment(null)}
+        onConfirm={() => {
+          if (confirmPayment) {
+            deletePayment.mutate({
+              paymentId: confirmPayment.paymentId,
+              debtId: confirmPayment.debtId,
+            });
+            setConfirmPayment(null);
+          }
+        }}
+        title={`Delete payment ${confirmPayment?.amount ?? ""}?`}
+        description="This will delete the payment and its vault transaction and update the debt balance. This cannot be undone."
       />
 
       <CreateFab

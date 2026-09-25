@@ -8,6 +8,7 @@ import {
   expenseCategorySchema,
   expenseBudgetSchema,
   debtSchema,
+  debtPaymentSchema,
   type ExpenseTransactionFormValues,
   type ExpenseCategoryFormValues,
   type ExpenseBudgetFormValues,
@@ -28,6 +29,9 @@ import {
   useDeleteBudget,
   useSaveDebt,
   useDeleteDebt,
+  useAddDebtPayment,
+  useUpdateDebtPayment,
+  useDeleteDebtPayment,
 } from "@/features/expenses/use-expenses";
 import { colorSoft, HABIT_COLORS } from "@/lib/colors";
 import { todayISO } from "@/lib/dates";
@@ -676,6 +680,111 @@ export function DebtDialog({
         </DialogContent>
       </Dialog>
       <ConfirmDeleteDialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen} onConfirm={() => { if (debt) void remove.mutate(debt.id); onOpenChange(false) }} />
+    </>
+  )
+}
+
+export function DebtPaymentDialog({
+  open,
+  onOpenChange,
+  debt,
+  payment,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  debt: Debt | null
+  payment?: import("@/lib/types").DebtPayment | null
+}) {
+  const addPayment = useAddDebtPayment()
+  const updatePayment = useUpdateDebtPayment()
+  const deletePayment = useDeleteDebtPayment()
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const isEdit = Boolean(payment)
+  const remainingBase = debt ? Number(debt.amount) - Number(debt.paid_amount || 0) : 0
+  const remaining = isEdit && payment ? remainingBase + Number(payment.amount) : remainingBase
+
+  const { register, reset, handleSubmit, watch, formState } = useForm<import("@/lib/schemas").DebtPaymentFormValues>({
+    resolver: zodResolver(debtPaymentSchema),
+    defaultValues: { amount: "" as unknown as number, date: new Date().toISOString().slice(0, 10), note: "" },
+  })
+
+  const watchedAmount = watch("amount")
+
+  useEffect(() => {
+    if (open) {
+      if (payment) {
+        reset({ amount: payment.amount as unknown as number, date: payment.date.slice(0, 10), note: payment.note || "" })
+      } else if (debt) {
+        reset({ amount: "" as unknown as number, date: new Date().toISOString().slice(0, 10), note: "" })
+      }
+    }
+  }, [open, debt, payment, reset])
+
+  async function onSubmit(values: import("@/lib/schemas").DebtPaymentFormValues) {
+    if (!debt) return
+    if (Number(values.amount) > remaining + 0.001) return
+    if (isEdit && payment) {
+      await updatePayment.mutateAsync({ paymentId: payment.id, debtId: debt.id, values })
+    } else {
+      await addPayment.mutateAsync({ debtId: debt.id, values })
+    }
+    onOpenChange(false)
+  }
+
+  if (!debt) return null
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md" showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>{isEdit ? "Edit payment" : `Payment for ${debt.person_name}`}</DialogTitle>
+          </DialogHeader>
+        <div className="rounded-none border border-primary/10 bg-primary/5 px-3 py-2 text-xs font-mono">
+          <div className="flex justify-between"><span>Total</span><span className="font-bold">{Number(debt.amount).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Paid</span><span className="text-emerald-400">{Number(debt.paid_amount || 0).toFixed(2)}</span></div>
+          <div className="flex justify-between"><span>Remaining</span><span className="text-amber-400">{(Number(debt.amount) - Number(debt.paid_amount || 0)).toFixed(2)}</span></div>
+          <div className="mt-2 h-1.5 bg-muted"><div className="h-full bg-primary" style={{ width: `${Math.min(100, (Number(debt.paid_amount || 0) / Number(debt.amount)) * 100)}%` }} /></div>
+        </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+          <div className="space-y-2">
+            <Label htmlFor="pay-amount">Amount (max {remaining.toFixed(2)})</Label>
+            <Input id="pay-amount" type="number" inputMode="decimal" min="0" max={remaining} step="0.01" placeholder="0.00" className="text-xl font-bold tabular-nums" {...register("amount")} />
+            {formState.errors.amount && <p className="text-xs text-destructive">{formState.errors.amount.message}</p>}
+            {Number(watchedAmount) > remaining + 0.001 && <p className="text-xs text-destructive">Exceeds remaining {remaining.toFixed(2)}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="pay-date">Date</Label>
+            <Input id="pay-date" type="date" {...register("date")} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="pay-note">Note</Label>
+            <Input id="pay-note" placeholder="Optional" {...register("note")} />
+          </div>
+          <DialogFooter>
+            {isEdit && payment && (
+              <Button type="button" variant="destructive" className="w-full sm:w-auto mr-auto" onClick={() => setConfirmDeleteOpen(true)}>
+                Delete
+              </Button>
+            )}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="submit" disabled={formState.isSubmitting || addPayment.isPending || updatePayment.isPending}>{isEdit ? "Update" : "Pay"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+    {isEdit && payment && debt && (
+      <ConfirmDeleteDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        onConfirm={() => {
+          deletePayment.mutate({ paymentId: payment.id, debtId: debt.id })
+          onOpenChange(false)
+        }}
+        title={`Delete payment ${Number(payment.amount).toFixed(2)}?`}
+        description="This will delete the payment and its vault transaction. This cannot be undone."
+      />
+    )}
     </>
   )
 }

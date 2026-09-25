@@ -1,5 +1,4 @@
 "use client";
-import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 export function StatBar({
@@ -41,14 +40,15 @@ export function StatBar({
         )}
       </div>
       <div className={cn("relative overflow-hidden rounded-full bg-muted/60 border border-primary/10", size === "sm" ? "h-1.5" : "h-2")}>
-        <motion.div
-          className={cn("absolute inset-y-0 left-0 rounded-full", colorMap[color])}
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ type: "spring", stiffness: 180, damping: 20, delay: 0.15 }}
+        <div
+          className={cn("absolute inset-y-0 left-0 rounded-full will-change-[width] [transform:translateZ(0)]", colorMap[color])}
+          style={{
+            width: `${pct}%`,
+            transition: "width 420ms cubic-bezier(0.22,1,0.36,1)",
+          }}
         />
         {/* scanline shimmer */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-40" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-40 pointer-events-none" />
       </div>
     </div>
   );

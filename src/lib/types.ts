@@ -163,7 +163,21 @@ export interface Debt {
   status: "pending" | "paid" | "overdue"
   due_date: string | null
   note: string
+  paid_amount: number
   settlement_transaction_id: string | null
+  is_locked: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface DebtPayment {
+  id: string
+  debt_id: string
+  user_id: string
+  amount: number
+  date: string
+  note: string
+  transaction_id: string | null
   created_at: string
   updated_at: string
 }

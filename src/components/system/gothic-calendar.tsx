@@ -39,9 +39,9 @@ export function GothicCalendar({
           )
         })}
       </div>
-      <div className="mt-2 h-1 w-full bg-muted/30">
+      {/* <div className="mt-2 h-1 w-full bg-muted/30">
         <div className="h-full bg-primary" style={{ width: `${Math.round((activeSet.size / Math.max(1, days.length)) * 100)}%` }} />
-      </div>
+      </div> */}
     </div>
   )
 }
