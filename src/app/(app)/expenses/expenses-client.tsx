@@ -47,6 +47,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export function fmt(n: number | string): string {
@@ -255,6 +262,15 @@ function ExpensesPageContent() {
     null,
   );
   const [debtFilter, setDebtFilter] = useState<"all" | "debt" | "owe">("all");
+  const [catFilter, setCatFilter] = useState<"all" | "expense" | "income">(
+    "all",
+  );
+  const [budgetStatus, setBudgetStatus] = useState<"all" | "ontrack" | "over">(
+    "all",
+  );
+  const [budgetPeriod, setBudgetPeriod] = useState<
+    "all" | "weekly" | "monthly" | "yearly"
+  >("all");
   const [carouselSlide, setCarouselSlide] = useState(0);
   const [paymentDebt, setPaymentDebt] = useState<(typeof debts)[number] | null>(
     null,
@@ -331,7 +347,8 @@ function ExpensesPageContent() {
           (t.note ?? "").toLowerCase().includes(q) ||
           (t.category_id
             ? (catById.get(t.category_id)?.name ?? "").toLowerCase().includes(q)
-            : false),
+            : false) ||
+          Number(t.amount).toFixed(2).includes(q),
       );
     }
     return [...list].sort((a, b) => {
@@ -353,7 +370,8 @@ function ExpensesPageContent() {
       list = list.filter(
         (d) =>
           d.person_name.toLowerCase().includes(q) ||
-          (d.note ?? "").toLowerCase().includes(q),
+          (d.note ?? "").toLowerCase().includes(q) ||
+          Number(d.amount).toFixed(2).includes(q),
       );
     }
     return [...list].sort((a, b) => {
@@ -411,8 +429,45 @@ function ExpensesPageContent() {
     });
   }, [budgets, txns]);
 
-  const expenseCats = categories.filter((c) => c.type === "expense");
-  const incomeCats = categories.filter((c) => c.type === "income");
+  const visibleCats = useMemo(() => {
+    let list = categories;
+    if (catFilter !== "all") list = list.filter((c) => c.type === catFilter);
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      list = list.filter((c) => c.name.toLowerCase().includes(q));
+    }
+    return list;
+  }, [categories, catFilter, query]);
+
+  const expenseCats = visibleCats.filter((c) => c.type === "expense");
+  const incomeCats = visibleCats.filter((c) => c.type === "income");
+  const showExpenseGroup =
+    (catFilter === "all" || catFilter === "expense") &&
+    (!query.trim() || expenseCats.length > 0);
+  const showIncomeGroup =
+    (catFilter === "all" || catFilter === "income") &&
+    (!query.trim() || incomeCats.length > 0);
+
+  const visibleBudgets = useMemo(() => {
+    let list = budgetProgress;
+    if (budgetStatus === "ontrack")
+      list = list.filter(({ spend, budget }) => spend <= Number(budget.amount));
+    else if (budgetStatus === "over")
+      list = list.filter(({ spend, budget }) => spend > Number(budget.amount));
+    if (budgetPeriod !== "all")
+      list = list.filter(({ budget }) => budget.period === budgetPeriod);
+    if (query.trim()) {
+      const q = query.toLowerCase();
+      list = list.filter(
+        ({ budget }) =>
+          (catById.get(budget.category_id)?.name ?? "")
+            .toLowerCase()
+            .includes(q) || Number(budget.amount).toFixed(2).includes(q),
+      );
+    }
+    return list;
+  }, [budgetProgress, budgetStatus, budgetPeriod, query, catById]);
+
   const isLoading = txnsLoading || catsLoading;
 
   function openNewTxn() {
@@ -435,16 +490,6 @@ function ExpensesPageContent() {
             >
               <BarChart3 className="size-3.5" /> Stats
             </Link>
-            <Button
-              variant="outline"
-              className="hidden h-9 md:inline-flex"
-              onClick={() => {
-                setEditingCat(null);
-                setCatOpen(true);
-              }}
-            >
-              New category
-            </Button>
             <Button className="hidden md:inline-flex" onClick={openNewTxn}>
               <Plus className="mr-1 size-4" /> Add transaction
             </Button>
@@ -516,7 +561,7 @@ function ExpensesPageContent() {
               <div className="relative min-w-0 flex-1">
                 <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search notes or categories…"
+                  placeholder="Search notes, categories or amounts…"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="pl-8"
@@ -682,35 +727,162 @@ function ExpensesPageContent() {
 
         <TabsContent value="categories">
           <div className="space-y-4">
-            <CategoryGroup
-              title="Spending"
-              categories={expenseCats}
-              onEdit={(c) => {
-                setEditingCat(c);
-                setCatOpen(true);
-              }}
-              onNew={() => {
-                setEditingCat(null);
-                setCatOpen(true);
-              }}
-            />
-            <CategoryGroup
-              title="Income"
-              categories={incomeCats}
-              onEdit={(c) => {
-                setEditingCat(c);
-                setCatOpen(true);
-              }}
-              onNew={() => {
-                setEditingCat(null);
-                setCatOpen(true);
-              }}
-            />
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search categories…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <div className="flex shrink-0 gap-1 rounded-full bg-muted/70 p-1">
+                {(["all", "expense", "income"] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={catFilter === t}
+                    onClick={() => setCatFilter(t)}
+                    className={cn(
+                      "h-8 rounded-full px-3 text-xs font-medium capitalize",
+                      catFilter === t
+                        ? "bg-card shadow-sm"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    <span className="lg:inline hidden">
+                      {t === "all"
+                        ? "All"
+                        : t === "expense"
+                          ? "Spending"
+                          : "Income"}
+                    </span>
+
+                    <span className="lg:hidden inline">
+                      {t === "all" ? "All" : t === "expense" ? "Spend" : "Inc"}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                className="h-8 shrink-0 max-md:hidden"
+                onClick={() => {
+                  setEditingCat(null);
+                  setCatOpen(true);
+                }}
+              >
+                <Plus className="mr-1 size-3.5" /> New category
+              </Button>
+            </div>
+            {!showExpenseGroup && !showIncomeGroup ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <p className="text-sm">
+                    {categories.length === 0
+                      ? "No categories yet."
+                      : "No categories match your search."}
+                  </p>
+                  <Button
+                    className="mt-4 gap-1.5"
+                    onClick={() => {
+                      setEditingCat(null);
+                      setCatOpen(true);
+                    }}
+                  >
+                    <Plus className="size-4" /> New category
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {showExpenseGroup && (
+                  <CategoryGroup
+                    title="Spending"
+                    categories={expenseCats}
+                    onEdit={(c) => {
+                      setEditingCat(c);
+                      setCatOpen(true);
+                    }}
+                  />
+                )}
+                {showIncomeGroup && (
+                  <CategoryGroup
+                    title="Income"
+                    categories={incomeCats}
+                    onEdit={(c) => {
+                      setEditingCat(c);
+                      setCatOpen(true);
+                    }}
+                  />
+                )}
+              </>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="budgets">
           <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative w-full min-w-0 sm:w-auto sm:flex-1">
+                <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search budgets or amounts…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <Select
+                value={budgetStatus}
+                onValueChange={(v) =>
+                  setBudgetStatus(v as typeof budgetStatus)
+                }
+              >
+                <SelectTrigger
+                  className="h-8 min-w-0 flex-1 text-xs sm:w-[118px] sm:flex-none"
+                  aria-label="Filter by status"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="ontrack">On track</SelectItem>
+                  <SelectItem value="over">Over budget</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={budgetPeriod}
+                onValueChange={(v) =>
+                  setBudgetPeriod(v as typeof budgetPeriod)
+                }
+              >
+                <SelectTrigger
+                  className="h-8 min-w-0 flex-1 text-xs sm:w-[106px] sm:flex-none"
+                  aria-label="Filter by period"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All periods</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                className="h-8 shrink-0 max-md:hidden"
+                disabled={categories.length === 0}
+                onClick={() => {
+                  setEditingBudget(null);
+                  setBudgetOpen(true);
+                }}
+              >
+                <Plus className="mr-1 size-3.5" /> New budget
+              </Button>
+            </div>
             {budgetProgress.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
@@ -732,77 +904,70 @@ function ExpensesPageContent() {
                   )}
                 </CardContent>
               </Card>
+            ) : visibleBudgets.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  <p className="text-sm">No budgets match your filters.</p>
+                </CardContent>
+              </Card>
             ) : (
-              <>
-                {budgetProgress.map(({ budget, spend, pct }) => {
-                  const cat = catById.get(budget.category_id);
-                  const over = spend > Number(budget.amount);
-                  return (
-                    <button
-                      key={budget.id}
-                      type="button"
-                      onClick={() => {
-                        setEditingBudget(budget);
-                        setBudgetOpen(true);
-                      }}
-                      className="block w-full rounded-3xl text-left transition hover:border-primary/50"
-                    >
-                      <Card className="hover:card-shadow">
-                        <CardContent className="space-y-2 px-4">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
-                              <CategoryEmoji
-                                emoji={cat?.icon}
-                                color={cat?.color}
-                              />
-                              <span className="truncate">
-                                {cat?.name ?? "Unknown"}
-                              </span>
-                              <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-medium capitalize text-accent-foreground">
-                                {budget.period}
-                              </span>
+              visibleBudgets.map(({ budget, spend, pct }) => {
+                const cat = catById.get(budget.category_id);
+                const over = spend > Number(budget.amount);
+                return (
+                  <button
+                    key={budget.id}
+                    type="button"
+                    onClick={() => {
+                      setEditingBudget(budget);
+                      setBudgetOpen(true);
+                    }}
+                    className="block w-full rounded-3xl text-left transition hover:border-primary/50"
+                  >
+                    <Card className="hover:card-shadow">
+                      <CardContent className="space-y-2 px-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+                            <CategoryEmoji
+                              emoji={cat?.icon}
+                              color={cat?.color}
+                            />
+                            <span className="truncate">
+                              {cat?.name ?? "Unknown"}
                             </span>
-                            <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
-                              {fmt(spend)} / {fmt(Number(budget.amount))}
+                            <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-medium capitalize text-accent-foreground">
+                              {budget.period}
                             </span>
-                          </div>
-                          <Progress
-                            value={pct}
-                            aria-label={`${cat?.name ?? "Budget"} ${pct}% used`}
-                            className={cn(
-                              over &&
-                                "[&_[data-slot=progress-indicator]]:bg-destructive",
-                            )}
-                          />
-                          <p
-                            className={cn(
-                              "text-xs tabular-nums",
-                              over
-                                ? "font-medium text-destructive"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {over
-                              ? `${fmt(spend - Number(budget.amount))} over budget`
-                              : `${pct}% used · ${fmt(Number(budget.amount) - spend)} left`}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    </button>
-                  );
-                })}
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled={categories.length === 0}
-                  onClick={() => {
-                    setEditingBudget(null);
-                    setBudgetOpen(true);
-                  }}
-                >
-                  <Plus className="mr-1 size-4" /> New budget
-                </Button>
-              </>
+                          </span>
+                          <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+                            {fmt(spend)} / {fmt(Number(budget.amount))}
+                          </span>
+                        </div>
+                        <Progress
+                          value={pct}
+                          aria-label={`${cat?.name ?? "Budget"} ${pct}% used`}
+                          className={cn(
+                            over &&
+                              "[&_[data-slot=progress-indicator]]:bg-destructive",
+                          )}
+                        />
+                        <p
+                          className={cn(
+                            "text-xs tabular-nums",
+                            over
+                              ? "font-medium text-destructive"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {over
+                            ? `${fmt(spend - Number(budget.amount))} over budget`
+                            : `${pct}% used · ${fmt(Number(budget.amount) - spend)} left`}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </button>
+                );
+              })
             )}
           </div>
         </TabsContent>
@@ -810,7 +975,16 @@ function ExpensesPageContent() {
         <TabsContent value="debts">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="flex gap-1 rounded-full bg-muted/70 p-1">
+              <div className="relative min-w-0 flex-1">
+                <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search people, notes or amounts…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <div className="flex shrink-0 gap-1 rounded-full bg-muted/70 p-1">
                 {(["all", "debt", "owe"] as const).map((t) => (
                   <button
                     key={t}
@@ -824,13 +998,13 @@ function ExpensesPageContent() {
                         : "text-muted-foreground",
                     )}
                   >
-                    {t === "all" ? "All" : t === "debt" ? "Debts" : "Owes"}
+                    {t === "all" ? "All" : t === "debt" ? "Debt" : "Owe"}
                   </button>
                 ))}
               </div>
               <Button
                 size="sm"
-                className="ml-auto h-8"
+                className="h-8 shrink-0 max-md:hidden"
                 onClick={() => {
                   setEditingDebt(null);
                   setDebtOpen(true);
@@ -905,21 +1079,26 @@ function ExpensesPageContent() {
                               )}
                             </span>
                             <span className="block text-xs text-muted-foreground truncate">
-                              {fmt(paid)} / {fmt(total)} · {pct.toFixed(0)}% ·{" "}
-                              {isPaid ? "paid" : d.status}
+                              {fmt(total)}
                             </span>
                           </span>
-                          <span
-                            className={cn(
-                              "shrink-0 text-sm font-bold tabular-nums",
-                              d.type === "debt"
-                                ? "text-red-600 dark:text-red-400"
-                                : "text-green-600 dark:text-green-400",
-                            )}
-                          >
-                            {d.type === "debt" ? "-" : "+"}
-                            {fmt(total)}
-                          </span>
+                          {isPaid ? (
+                            <span className="shrink-0 rounded-full bg-green-600 px-2.5 py-1 text-xs font-semibold text-white">
+                              cleared
+                            </span>
+                          ) : (
+                            <span
+                              className={cn(
+                                "shrink-0 text-sm font-bold tabular-nums",
+                                d.type === "debt"
+                                  ? "text-red-600 dark:text-red-400"
+                                  : "text-green-600 dark:text-green-400",
+                              )}
+                            >
+                              {d.type === "debt" ? "-" : "+"}
+                              {fmt(remaining)}
+                            </span>
+                          )}
                           <span
                             className={cn(
                               "grid size-8 place-items-center shrink-0 rounded border transition-transform",
@@ -972,12 +1151,12 @@ function ExpensesPageContent() {
                               <span
                                 className={cn(
                                   "font-medium",
-                                  remaining === 0
-                                    ? "text-green-600"
-                                    : "text-amber-600",
+                                  isPaid ? "text-green-600" : "text-amber-600",
                                 )}
                               >
-                                Remaining {fmt(remaining)}
+                                {isPaid
+                                  ? "Cleared"
+                                  : `Remaining ${fmt(remaining)}`}
                               </span>
                             </div>
 
@@ -1131,26 +1310,14 @@ function CategoryGroup({
   title,
   categories,
   onEdit,
-  onNew,
 }: {
   title: string;
   categories: ExpenseCategory[];
   onEdit: (c: ExpenseCategory) => void;
-  onNew: () => void;
 }) {
   return (
     <section className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 rounded-full"
-          onClick={onNew}
-        >
-          <Plus className="size-3.5" /> New
-        </Button>
-      </div>
+      <h2 className="text-sm font-semibold text-muted-foreground">{title}</h2>
       {categories.length === 0 ? (
         <Card>
           <CardContent className="py-6 text-center text-sm text-muted-foreground">

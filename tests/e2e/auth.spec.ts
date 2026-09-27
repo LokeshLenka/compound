@@ -5,7 +5,7 @@ test("redirects unauthenticated visitors to login", async ({ page }) => {
   await page.goto("/dashboard")
   await page.waitForURL("**/login**")
   await expect(
-    page.getByText("Habits, tasks, notes & diary in one private place."),
+    page.getByText("Daily quests, gates & shadows — your Hunter System."),
   ).toBeVisible()
 })
 
@@ -25,7 +25,7 @@ test("register → dashboard → sign out → login again", async ({ page }) => 
   // Sign back in
   await page.getByLabel("Email").fill(user.email)
   await page.getByLabel("Password").fill(user.password)
-  await page.getByRole("button", { name: "Sign in" }).click()
+  await page.getByRole("button", { name: "ENTER SYSTEM" }).click()
   await page.waitForURL("**/dashboard**")
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible()
 })

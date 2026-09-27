@@ -75,9 +75,12 @@ test("filter transactions by type and search", async ({ page }) => {
 
   // Search narrows the list
   await page.getByRole("group", { name: "Filter by type" }).getByRole("button", { name: "All" }).click()
-  await page.getByPlaceholder(/Search notes or categories/i).fill("salary")
+  await page.getByPlaceholder(/Search notes, categories or amounts/i).fill("salary")
   await expect(page.getByText("Salary e2e")).toBeVisible()
-  await page.getByPlaceholder(/Search notes or categories/i).fill("no-such-txn-xyz")
+  // Amount is searchable too
+  await page.getByPlaceholder(/Search notes, categories or amounts/i).fill("99.00")
+  await expect(page.getByText("Salary e2e")).toBeVisible()
+  await page.getByPlaceholder(/Search notes, categories or amounts/i).fill("no-such-txn-xyz")
   await expect(page.getByText("Salary e2e")).toBeHidden()
 })
 

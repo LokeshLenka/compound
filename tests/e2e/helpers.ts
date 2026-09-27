@@ -13,10 +13,10 @@ export function freshUser() {
 /** Register a brand-new account through the UI, landing on /dashboard. */
 export async function registerAndLogin(page: Page, user = freshUser()) {
   await page.goto("/login")
-  await page.getByRole("tab", { name: "Create account" }).click()
+  await page.getByRole("tab", { name: "AWAKEN" }).click()
   await page.getByLabel("Email").fill(user.email)
   await page.getByLabel("Password").fill(user.password)
-  await page.getByRole("button", { name: "Create account" }).click()
+  await page.getByRole("button", { name: "AWAKEN" }).click()
   await page.waitForURL("**/dashboard", { timeout: 20_000 })
   return user
 }
@@ -25,6 +25,6 @@ export async function signIn(page: Page, email: string, password: string) {
   await page.goto("/login")
   await page.getByLabel("Email").fill(email)
   await page.getByLabel("Password").fill(password)
-  await page.getByRole("button", { name: "Sign in" }).click()
+  await page.getByRole("button", { name: "ENTER SYSTEM" }).click()
   await page.waitForURL("**/dashboard", { timeout: 20_000 })
 }
